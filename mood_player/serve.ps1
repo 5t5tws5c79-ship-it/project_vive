@@ -37,8 +37,9 @@ while ($true) {
     if ($path -eq "/config.js") {
       $key = ""
       if (Test-Path $envFile) {
-        $line = Get-Content $envFile | Where-Object { $_ -match '^API_KEY=' } | Select-Object -First 1
-        $key = ($line -replace '^API_KEY=','').Trim()
+        # Vue(Vite)와 동일하게 VITE_OPENAI_API_KEY 우선, 없으면 API_KEY 폴백
+        $line = Get-Content $envFile | Where-Object { $_ -match '^(VITE_OPENAI_API_KEY|API_KEY)=' } | Select-Object -First 1
+        $key = ($line -replace '^(VITE_OPENAI_API_KEY|API_KEY)=','').Trim()
       }
       $js = "window.OPENAI_KEY = " + ($key | ConvertTo-Json) + ";"
       $bytes = [System.Text.Encoding]::UTF8.GetBytes($js)
