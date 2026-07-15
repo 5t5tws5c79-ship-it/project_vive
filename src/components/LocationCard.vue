@@ -3,19 +3,22 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { LOCATION_SOURCE_LABEL } from '../composables/useGeolocation'
 import { loadKakaoSdk } from '../lib/kakao'
 import { formatDistance } from '../lib/geo'
+import { VIRTUAL_WALK } from '../config/settings'
 
 const props = defineProps({
   location: { type: Object, default: null },
   status: { type: String, required: true },
   error: { type: String, default: '' },
   mode: { type: String, default: 'gps' },
-  demoRoute: { type: Array, default: () => [] },
-  demoIndex: { type: Number, default: 0 },
+  // 가상 산책 — 화면에 부드럽게 움직이는 위치(walkPosition)와 진행 시간(ms)
+  walkPosition: { type: Object, default: null },
+  walkElapsedMs: { type: Number, default: 0 },
+  isWalking: { type: Boolean, default: false },
   // 무드 추론에 영향을 준 근처 장소 — 카테고리별 모양이 다른 핀으로 지도에 같이 찍는다
   places: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['relocate', 'goto-demo', 'next-step'])
+const emit = defineEmits(['relocate', 'start-walk'])
 const mapEl = ref(null)
 const mapReady = ref(false)
 const selected = ref(null)
@@ -23,6 +26,12 @@ let map = null
 let marker = null
 let kakaoRef = null
 let overlays = []
+let walkerOverlay = null
+let pathLine = null
+
+const walkProgressPct = computed(() =>
+  Math.min(100, (props.walkElapsedMs / VIRTUAL_WALK.durationMs) * 100),
+)
 
 // 지금 places에 실제로 등장하는 카테고리만 모아 범례로 보여준다
 const legend = computed(() => {
@@ -74,7 +83,22 @@ function renderPlacePins(center) {
     overlays.push(overlay)
   })
 
-  map.setBounds(bounds)
+  // 가상 산책 중엔 전체 경로가 계속 보이도록 카메라를 고정한다 —
+  // 체크포인트마다 근처 장소 기준으로 카메라가 튀면 걷는 애니메이션이 깨진다.
+  if (!props.isWalking) map.setBounds(bounds)
+}
+
+// 가상 산책 중엔 걷는 사람 오버레이가 "내 위치" 역할을 하므로 기본 마커는 숨긴다.
+function syncMeMarker(center) {
+  if (props.isWalking) {
+    marker?.setMap(null)
+    return
+  }
+  if (!marker) marker = new kakaoRef.maps.Marker({ position: center, map })
+  else {
+    marker.setPosition(center)
+    marker.setMap(map)
+  }
 }
 
 async function initMap(loc) {
@@ -88,19 +112,63 @@ async function initMap(loc) {
       map = new kakao.maps.Map(mapEl.value, { center, level: 4 })
       setTimeout(() => {
         map.relayout()
-        map.setCenter(center)
+        if (!props.isWalking) map.setCenter(center)
         renderPlacePins(center)
       }, 250)
-    } else {
+    } else if (!props.isWalking) {
       map.setCenter(center)
       renderPlacePins(center)
+    } else {
+      renderPlacePins(center) // 걷는 중엔 카메라 유지, 핀만 갱신
     }
-    if (!marker) marker = new kakao.maps.Marker({ position: center, map })
-    else marker.setPosition(center)
+    syncMeMarker(center)
     mapReady.value = true
   } catch (err) {
     console.error('Kakao init failed', err)
     mapReady.value = false
+  }
+}
+
+// 가상 산책 시작 시 시작~끝 사이 점선 경로를 그리고, 그 두 점만으로 카메라를 고정한다
+function drawWalkRoute() {
+  if (!map || !kakaoRef) return
+  pathLine?.setMap(null)
+
+  const path = [
+    new kakaoRef.maps.LatLng(VIRTUAL_WALK.start.lat, VIRTUAL_WALK.start.lng),
+    new kakaoRef.maps.LatLng(VIRTUAL_WALK.end.lat, VIRTUAL_WALK.end.lng),
+  ]
+  pathLine = new kakaoRef.maps.Polyline({
+    path,
+    strokeWeight: 3,
+    strokeColor: '#0d1014',
+    strokeOpacity: 0.55,
+    strokeStyle: 'shortdash',
+  })
+  pathLine.setMap(map)
+
+  const bounds = new kakaoRef.maps.LatLngBounds()
+  path.forEach((p) => bounds.extend(p))
+  map.setBounds(bounds)
+}
+
+// 걷는 사람 아이콘 — walkPosition이 바뀔 때마다(매 프레임) 좌표만 갱신
+function syncWalkerOverlay(pos) {
+  if (!map || !kakaoRef || !pos) return
+  const latlng = new kakaoRef.maps.LatLng(pos.lat, pos.lng)
+  if (!walkerOverlay) {
+    const el = document.createElement('div')
+    el.className = 'svmap-walker'
+    el.innerHTML = '<span class="svmap-walker__icon">🚶</span>'
+    walkerOverlay = new kakaoRef.maps.CustomOverlay({
+      position: latlng,
+      content: el,
+      yAnchor: 0.9,
+      zIndex: 50,
+    })
+    walkerOverlay.setMap(map)
+  } else {
+    walkerOverlay.setPosition(latlng)
   }
 }
 
@@ -111,9 +179,17 @@ watch(() => props.places, () => {
     renderPlacePins(new kakaoRef.maps.LatLng(props.location.lat, props.location.lng))
   }
 })
+watch(() => props.isWalking, (walking) => {
+  if (walking) drawWalkRoute()
+})
+watch(() => props.walkPosition, (pos) => {
+  syncWalkerOverlay(pos)
+})
 
 onBeforeUnmount(() => {
   clearOverlays()
+  pathLine?.setMap(null)
+  walkerOverlay?.setMap(null)
 })
 </script>
 
@@ -188,17 +264,23 @@ onBeforeUnmount(() => {
           :aria-checked="mode === 'demo'"
           class="mode-btn"
           :class="{ 'mode-btn--on': mode === 'demo' }"
-          @click="emit('goto-demo', 0)"
+          :disabled="isWalking"
+          @click="emit('start-walk')"
         >
-          🎬 가상 산책
+          {{ isWalking ? '🚶 산책 중…' : '🎬 가상 산책' }}
         </button>
       </div>
 
       <div v-if="mode === 'demo'" class="demo-row">
         <span class="demo-step">
-          {{ demoIndex + 1 }}/{{ demoRoute.length }} · {{ demoRoute[demoIndex]?.name }}
+          {{ isWalking
+            ? `${Math.round(walkElapsedMs / 1000)} / ${VIRTUAL_WALK.durationMs / 1000}초`
+            : `${VIRTUAL_WALK.end.name} 도착` }}
+          · {{ VIRTUAL_WALK.start.name }} → {{ VIRTUAL_WALK.end.name }}
         </span>
-        <button class="relocate" @click="emit('next-step')">다음 장소 →</button>
+        <div class="demo-progress">
+          <div class="demo-progress__fill" :style="{ width: `${walkProgressPct}%` }" />
+        </div>
       </div>
       <button v-else class="relocate" @click="emit('relocate')">위치 다시 잡기</button>
     </template>
@@ -459,11 +541,10 @@ onBeforeUnmount(() => {
 
 .demo-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
   margin-top: 12px;
-  flex-wrap: wrap;
 }
 
 .demo-step {
@@ -471,8 +552,19 @@ onBeforeUnmount(() => {
   color: rgba(13, 16, 20, 0.6);
 }
 
-.demo-row .relocate {
-  margin-top: 0;
+.demo-progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(13, 16, 20, 0.1);
+  overflow: hidden;
+}
+
+.demo-progress__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--mood);
+  transition: width 0.25s linear;
 }
 
 .relocate {
@@ -592,5 +684,32 @@ onBeforeUnmount(() => {
 
 .svmap-pin--teardrop:hover {
   transform: rotate(-45deg) scale(1.15);
+}
+
+.svmap-walker {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #0d1014;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  animation: svmap-walk-bounce 0.6s ease-in-out infinite;
+}
+
+.svmap-walker__icon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+@keyframes svmap-walk-bounce {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-6deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(6deg);
+  }
 }
 </style>

@@ -23,12 +23,12 @@ const app = inject('app')
     :status="app.status.value"
     :error="app.error.value"
     :mode="app.mode.value"
-    :demo-route="app.demoRoute"
-    :demo-index="app.demoIndex.value"
+    :walk-position="app.walkPosition.value"
+    :walk-elapsed-ms="app.walkElapsedMs.value"
+    :is-walking="app.isWalking.value"
     :places="app.places.value"
     @relocate="app.locate"
-    @goto-demo="app.gotoStep"
-    @next-step="app.nextStep"
+    @start-walk="app.startVirtualWalk"
   />
 
   <ContributeTrack :places="app.places.value" :mood-label="app.mood.value.label" />

@@ -14,8 +14,17 @@ import { ATTRIBUTION, REGION } from './config/dataset'
 const route = useRoute()
 
 // 위치 → 근처 장소 → 무드 추론(LLM 주 + 규칙 폴백) → 플레이어
-const { location, status, error, locate, mode, demoRoute, demoIndex, gotoStep, nextStep } =
-  useGeolocation()
+const {
+  location,
+  status,
+  error,
+  locate,
+  mode,
+  walkPosition,
+  walkElapsedMs,
+  isWalking,
+  startVirtualWalk,
+} = useGeolocation()
 const { places, usedRadiusM, poiCount, isLoading, loadError } = useNearbyPlaces(location)
 const { moodId, mood, setMood, moods, moodInfo, analyzing } = useMood(places)
 const player = useCrossfadePlayer(moodId)
@@ -54,10 +63,10 @@ provide('app', {
   error,
   locate,
   mode,
-  demoRoute,
-  demoIndex,
-  gotoStep,
-  nextStep,
+  walkPosition,
+  walkElapsedMs,
+  isWalking,
+  startVirtualWalk,
   places,
   usedRadiusM,
   poiCount,

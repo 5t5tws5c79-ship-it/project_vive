@@ -1,3 +1,5 @@
+import { SETTINGS } from '../config/settings'
+
 // 실제 오디오 엔진 — <audio> 2덱(A/B) 크로스페이드.
 // useCrossfadePlayer 가 기대하는 덱 인터페이스를 구현한다:
 //   init · loadOnDeck(deck,track) · fadeDeck(deck,target,sec) · crossfade(from,to,sec)
@@ -33,11 +35,12 @@ export class AmbientEngine {
   loadOnDeck(deck, track) {
     const d = this.decks[deck]
     this._clear(d)
+    // 느린 인트로를 건너뛰고 곡의 본론부터 들리도록 항상 offset 지점에서 시작
+    // (20초 체크포인트마다 크로스페이드되는 데모에서 인트로만 듣다 끝나는 걸 방지)
     if (d.el.src !== track.url) {
-      d.el.src = track.url // 새 src 는 자동으로 0초부터 시작
-    } else {
-      try { d.el.currentTime = 0 } catch (e) {}
+      d.el.src = track.url
     }
+    try { d.el.currentTime = SETTINGS.trackStartOffsetSec } catch (e) {}
     d.gain = 0
     d.el.volume = 0
     const p = d.el.play()
