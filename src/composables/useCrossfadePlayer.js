@@ -22,6 +22,8 @@ export function useCrossfadePlayer(moodId) {
   let trackIndex = 0
   let rafId = null
   let lastTick = 0
+  let playingMoodId = null // 실제로 재생 중인 트랙의 무드 — moodId(추론/선택된 무드)와 분리 추적
+  let crossfadeFlagTimer = null // isCrossfading 코스메틱 플래그 전용 타이머
 
   const playlist = computed(() => moodById(moodId.value).tracks)
 
@@ -34,23 +36,26 @@ export function useCrossfadePlayer(moodId) {
     return new AmbientEngine()
   }
 
-  // 다음 트랙을 비활성 덱에 올리고 두 덱의 게인을 서로 반대 방향으로 램프한다.
+  // 다음 트랙을 비활성 덱에 올리고, 하나의 타이머로 두 덱을 동시에 반대 방향으로 램프한다
+  // (engine.crossfade — mood_player 처럼 단일 타이머라 두 덱이 항상 정확히 대칭으로 움직인다).
+  // 이전 덱을 멈추는 책임도 그 안에서 처리되어(정지가 이 크로스페이드 자신의 타이머
+  // 생명주기에 묶임), 이 덱이 다음 크로스페이드에 재사용될 때 자동으로 취소되므로
+  // 한창 페이드인 중인 새 트랙을 오래된 정지 예약이 뒤늦게 끊어버리는 레이스도 생기지 않는다.
   function crossfadeTo(track) {
     const nextDeck = 1 - activeDeck
     const fade = SETTINGS.fadeDurationSec
 
     engine.loadOnDeck(nextDeck, track)
-    engine.fadeDeck(nextDeck, 1, fade)
-    engine.fadeDeck(activeDeck, 0, fade)
+    engine.crossfade(activeDeck, nextDeck, fade)
 
-    const previousDeck = activeDeck
     activeDeck = nextDeck
     currentTrack.value = track
+    playingMoodId = moodId.value
     elapsedMs.value = 0
     isCrossfading.value = true
 
-    setTimeout(() => {
-      engine.stopDeck(previousDeck)
+    clearTimeout(crossfadeFlagTimer)
+    crossfadeFlagTimer = setTimeout(() => {
       isCrossfading.value = false
     }, fade * 1000)
   }
@@ -114,7 +119,13 @@ export function useCrossfadePlayer(moodId) {
       await engine.suspend()
       isPlaying.value = false
     } else {
-      await engine.resume()
+      if (moodId.value !== playingMoodId && playlist.value.length > 0) {
+        // 일시정지 사이 무드가 바뀌었으면 새 무드 첫 곡으로, 아니면 하던 곡을 이어재생
+        trackIndex = 0
+        crossfadeTo(playlist.value[0])
+      } else {
+        await engine.resume()
+      }
       lastTick = performance.now()
       isPlaying.value = true
     }
@@ -137,6 +148,8 @@ export function useCrossfadePlayer(moodId) {
   function teardown() {
     cancelAnimationFrame(rafId)
     rafId = null
+    clearTimeout(crossfadeFlagTimer)
+    crossfadeFlagTimer = null
     engine?.dispose()
     engine = null
     isUnlocked.value = false
@@ -147,9 +160,13 @@ export function useCrossfadePlayer(moodId) {
 
   watch(volume, (v) => engine?.setMasterVolume(v))
 
-  // 무드가 바뀌면 새 무드의 첫 트랙으로 곧바로 크로스페이드
-  watch(moodId, () => {
+  // 무드가 바뀌면 새 무드의 첫 트랙으로 곧바로 크로스페이드 — 단, 재생 중이고 실제로
+  // 재생 중이던 무드와 다를 때만. 일시정지 중에는 아무 것도 하지 않고(오디오를 깨우지 않음)
+  // 재개 시점(toggle 참고)에 다시 판단한다. trackIndex 도 크로스페이드가 실제로 일어날 때만
+  // 리셋해, 일시정지 중 무드가 왔다갔다 해도 실제 재생 트랙과 어긋나지 않게 한다.
+  watch(moodId, (id) => {
     if (!isUnlocked.value || playlist.value.length === 0) return
+    if (!isPlaying.value || id === playingMoodId) return
     trackIndex = 0
     crossfadeTo(playlist.value[0])
   })

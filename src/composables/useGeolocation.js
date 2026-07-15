@@ -1,12 +1,14 @@
 import { ref } from 'vue'
-import { FALLBACK_LOCATION, GEOLOCATION_OPTIONS } from '../config/settings'
+import { DEMO_ROUTE, FALLBACK_LOCATION, GEOLOCATION_OPTIONS } from '../config/settings'
 
 // F1. 현재 위치 획득 — 권한 거부/타임아웃/비보안 컨텍스트는 폴백 위치로.
 // source를 함께 노출해 "왜 이 무드가 나왔는지"를 화면에서 설명할 수 있게 한다.
 export function useGeolocation() {
-  const location = ref(null) // { lat, lng, source: 'gps'|'fallback'|'manual', label }
+  const location = ref(null) // { lat, lng, source: 'gps'|'fallback'|'manual'|'demo', label }
   const status = ref('idle') // 'idle' | 'locating' | 'ready' | 'error'
   const error = ref('')
+  const mode = ref('gps') // 'gps' | 'demo' — 발표용 가상 산책 모드
+  const demoIndex = ref(0)
 
   function useFallback(reason) {
     error.value = reason
@@ -15,6 +17,7 @@ export function useGeolocation() {
   }
 
   function locate() {
+    mode.value = 'gps' // 실제 GPS로 돌아오면 데모 모드는 해제
     status.value = 'locating'
     error.value = ''
 
@@ -55,11 +58,37 @@ export function useGeolocation() {
     status.value = 'ready'
   }
 
-  return { location, status, error, locate, setManual }
+  // 발표용 가상 산책 — DEMO_ROUTE의 i번째 지점으로 위치를 이동한다(순환).
+  function gotoStep(i) {
+    mode.value = 'demo'
+    demoIndex.value = ((i % DEMO_ROUTE.length) + DEMO_ROUTE.length) % DEMO_ROUTE.length
+    const step = DEMO_ROUTE[demoIndex.value]
+    location.value = { lat: step.lat, lng: step.lng, source: 'demo', label: step.name }
+    error.value = ''
+    status.value = 'ready'
+  }
+
+  function nextStep() {
+    gotoStep(demoIndex.value + 1)
+  }
+
+  return {
+    location,
+    status,
+    error,
+    locate,
+    setManual,
+    mode,
+    demoRoute: DEMO_ROUTE,
+    demoIndex,
+    gotoStep,
+    nextStep,
+  }
 }
 
 export const LOCATION_SOURCE_LABEL = {
   gps: 'GPS',
   fallback: '기본 위치',
   manual: '직접 지정',
+  demo: '가상 산책',
 }

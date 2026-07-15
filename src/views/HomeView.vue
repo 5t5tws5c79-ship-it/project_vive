@@ -15,7 +15,12 @@ const app = inject('app')
     :location="app.location.value"
     :status="app.status.value"
     :error="app.error.value"
+    :mode="app.mode.value"
+    :demo-route="app.demoRoute"
+    :demo-index="app.demoIndex.value"
     @relocate="app.locate"
+    @goto-demo="app.gotoStep"
+    @next-step="app.nextStep"
   />
 
   <ContributeTrack :places="app.places.value" :mood-label="app.mood.value.label" />

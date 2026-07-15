@@ -7,9 +7,12 @@ const props = defineProps({
   location: { type: Object, default: null },
   status: { type: String, required: true },
   error: { type: String, default: '' },
+  mode: { type: String, default: 'gps' },
+  demoRoute: { type: Array, default: () => [] },
+  demoIndex: { type: Number, default: 0 },
 })
 
-const emit = defineEmits(['relocate'])
+const emit = defineEmits(['relocate', 'goto-demo', 'next-step'])
 const mapEl = ref(null)
 const mapReady = ref(false)
 let map = null
@@ -77,7 +80,36 @@ watch(() => props.location, (loc) => { if (loc) initMap(loc) })
 
       <p v-if="error" class="notice">{{ error }} 기본 위치로 무드를 추천합니다.</p>
 
-      <button class="relocate" @click="emit('relocate')">위치 다시 잡기</button>
+      <div class="mode-row" role="radiogroup" aria-label="위치 모드">
+        <button
+          type="button"
+          role="radio"
+          :aria-checked="mode === 'gps'"
+          class="mode-btn"
+          :class="{ 'mode-btn--on': mode === 'gps' }"
+          @click="emit('relocate')"
+        >
+          실시간 위치
+        </button>
+        <button
+          type="button"
+          role="radio"
+          :aria-checked="mode === 'demo'"
+          class="mode-btn"
+          :class="{ 'mode-btn--on': mode === 'demo' }"
+          @click="emit('goto-demo', 0)"
+        >
+          🎬 가상 산책
+        </button>
+      </div>
+
+      <div v-if="mode === 'demo'" class="demo-row">
+        <span class="demo-step">
+          {{ demoIndex + 1 }}/{{ demoRoute.length }} · {{ demoRoute[demoIndex]?.name }}
+        </span>
+        <button class="relocate" @click="emit('next-step')">다음 장소 →</button>
+      </div>
+      <button v-else class="relocate" @click="emit('relocate')">위치 다시 잡기</button>
     </template>
   </section>
 </template>
@@ -193,6 +225,48 @@ watch(() => props.location, (loc) => { if (loc) initMap(loc) })
 .label {
   font-size: 1.25rem;
   font-weight: 600;
+}
+
+.mode-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.mode-btn {
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #0d1014;
+  background: #ffffff;
+  font-size: 0.78rem;
+  color: rgba(13, 16, 20, 0.6);
+  transition: all 0.2s;
+}
+
+/* 활성 위치 모드: 검은 테두리 + 검은 글씨 + 무드색 배경 (액션 버튼 문법) */
+.mode-btn--on {
+  background: var(--mood);
+  color: #0d1014;
+  font-weight: 600;
+}
+
+.demo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.demo-step {
+  font-size: 0.78rem;
+  color: rgba(13, 16, 20, 0.6);
+}
+
+.demo-row .relocate {
+  margin-top: 0;
 }
 
 .relocate {
