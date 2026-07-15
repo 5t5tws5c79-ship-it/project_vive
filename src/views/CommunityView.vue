@@ -192,15 +192,26 @@ const list = computed(() => {
 .item {
   display: block;
   text-decoration: none;
-  color: inherit;
-  border-left: 3px solid var(--item);
-  transition: border-color 0.2s, transform 0.12s;
+  /* 기본 내부 텍스트를 어둡게 */
+  color: #0d1014;
+  /* 카드 배경을 무드색(--item)으로 사용 */
+  background: var(--item, var(--surface));
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: background 180ms ease, color 180ms ease, transform 120ms ease, border-color 180ms ease;
 }
-
-.item:hover {
+.item * {
+  color: inherit;
+}
+.item:hover,
+.item:focus-within,
+.item:active {
+  background: #0d1014;
+  color: var(--item) !important;
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--item) 50%, var(--border));
-  border-left-color: var(--item);
+  border-color: color-mix(in srgb, var(--item) 45%, var(--border));
 }
 
 .item__head {
@@ -263,5 +274,16 @@ const list = computed(() => {
 
 .write:hover {
   background: color-mix(in srgb, var(--mood) 15%, transparent);
+}
+@media (hover: none) {
+  .item:active {
+    background: #0d1014;
+    color: var(--item) !important;
+  }
+}
+.badge--mood-chip {
+  border-color: color-mix(in srgb, var(--item) 45%, transparent);
+  background: color-mix(in srgb, var(--item) 15%, transparent);
+  color: inherit;
 }
 </style>
