@@ -57,16 +57,33 @@ const trackIndex = computed(() => {
     </div>
 
     <div class="controls">
+      <button class="ctrl" :disabled="!p.isUnlocked.value" aria-label="이전 곡" @click="p.prev()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="6" y1="5" x2="6" y2="19" />
+          <polygon points="18,5 8,12 18,19" fill="currentColor" stroke="none" />
+        </svg>
+      </button>
+
       <button
         class="play"
         :aria-label="p.isPlaying.value ? '일시정지' : '재생'"
         @click="p.toggle()"
       >
-        <span v-if="p.isPlaying.value" aria-hidden="true">❚❚</span>
-        <span v-else class="play__icon" aria-hidden="true">▶</span>
+        <svg v-if="p.isPlaying.value" viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="9.5" y1="7" x2="9.5" y2="17" />
+          <line x1="14.5" y1="7" x2="14.5" y2="17" />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+          <!-- 삼각형 자체를 뷰박스 중심(12) 기준 +1 우측 보정된 좌표로 그려 광학 중앙 정렬 -->
+          <polygon points="8.5,6.5 17.5,12 8.5,17.5" fill="currentColor" stroke="none" />
+        </svg>
       </button>
+
       <button class="ctrl" :disabled="!p.isUnlocked.value" aria-label="다음 곡" @click="p.next()">
-        ⏭
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="6,5 16,12 6,19" fill="currentColor" stroke="none" />
+          <line x1="18" y1="5" x2="18" y2="19" />
+        </svg>
       </button>
     </div>
 
@@ -222,45 +239,64 @@ const trackIndex = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 32px;
   margin-bottom: 22px;
 }
 
+.ctrl,
 .play {
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  background: var(--mood);
-  color: #0d1014;
-  font-size: 1rem;
-  font-weight: 700;
-  transition: transform 0.15s;
+  flex-shrink: 0;
+  color: var(--text);
+  background: transparent;
 }
 
-.play:hover {
-  transform: scale(1.05);
-}
-
-/* ▶ 글리프의 시각 무게중심 보정 */
-.play__icon {
-  margin-left: 3px;
+.ctrl svg,
+.play svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .ctrl {
-  display: grid;
-  place-items: center;
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
+}
+
+.ctrl svg {
+  width: 24px;
+  height: 24px;
 }
 
 .ctrl:hover:not(:disabled) {
-  border-color: var(--mood);
-  color: var(--text);
+  background: var(--surface-2);
+}
+
+.ctrl:disabled {
+  color: var(--text-faint);
+}
+
+/* 가운데 재생 버튼: 라인 원형 테두리 */
+.play {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text);
+  transition: transform 0.15s;
+}
+
+.play svg {
+  width: 28px;
+  height: 28px;
+}
+
+.play:hover {
+  background: var(--surface-2);
+  transform: scale(1.05);
 }
 
 .settings {

@@ -18,39 +18,68 @@ const statusText = computed(() => {
   if (!p.isPlaying.value) return '일시정지'
   return `다음 곡까지 ${p.remainingSec.value}초`
 })
+
+// 진행 라인 위 점(핸들)의 위치 (0~100%)
+const progressPct = computed(() =>
+  p.isUnlocked.value ? Math.min(100, p.progress.value * 100) : 0,
+)
 </script>
 
 <template>
   <section class="player">
-    <!-- 다음 전환까지 남은 시간 -->
-    <div
-      class="progress"
-      :style="{ transform: `scaleX(${p.isUnlocked.value ? p.progress.value : 0})` }"
-    />
+    <!-- 곡 정보: 누르면 재생 정보 + 설정 시트 -->
+    <button class="now" aria-label="재생 정보 열기" @click="emit('expand')">
+      <p class="track">{{ trackTitle }}</p>
+      <p class="status">
+        <span class="mood-tag">{{ moodLabel }}</span>
+        <span>{{ statusText }}</span>
+      </p>
+    </button>
 
-    <div class="main">
-      <!-- 곡 정보를 누르면 재생 정보 + 설정 시트가 열린다 -->
-      <button class="now" aria-label="재생 정보 열기" @click="emit('expand')">
-        <p class="track">{{ trackTitle }}</p>
-        <p class="status">
-          <span class="mood-tag">{{ moodLabel }}</span>
-          <span>{{ statusText }}</span>
-        </p>
+    <!-- 진행 라인 + 점 핸들 -->
+    <div
+      class="seek"
+      role="progressbar"
+      aria-label="다음 전환까지 진행"
+      :aria-valuenow="Math.round(progressPct)"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div class="seek__line" />
+      <div class="seek__fill" :style="{ width: `${progressPct}%` }" />
+      <div class="seek__dot" :style="{ left: `${progressPct}%` }" />
+    </div>
+
+    <!-- 컨트롤: 이전 · 재생/일시정지 · 다음 · 반복 -->
+    <div class="controls">
+      <button class="ctrl" :disabled="!p.isUnlocked.value" aria-label="이전 곡" @click="p.prev()">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="6" y1="5" x2="6" y2="19" />
+          <polygon points="18,5 8,12 18,19" fill="currentColor" stroke="none" />
+        </svg>
       </button>
 
-      <!-- 재생/일시정지 · 다음 곡 -->
       <button
         class="play"
         :class="{ 'play--pulse': p.isCrossfading.value }"
         :aria-label="p.isPlaying.value ? '일시정지' : '재생'"
         @click="p.toggle()"
       >
-        <span v-if="p.isPlaying.value" aria-hidden="true">❚❚</span>
-        <span v-else class="play__icon" aria-hidden="true">▶</span>
+        <svg v-if="p.isPlaying.value" viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="9.5" y1="7" x2="9.5" y2="17" />
+          <line x1="14.5" y1="7" x2="14.5" y2="17" />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+          <!-- 삼각형 자체를 뷰박스 중심(12) 기준 +1 우측 보정된 좌표로 그려 광학 중앙 정렬 -->
+          <polygon points="8.5,6.5 17.5,12 8.5,17.5" fill="currentColor" stroke="none" />
+        </svg>
       </button>
 
       <button class="ctrl" :disabled="!p.isUnlocked.value" aria-label="다음 곡" @click="p.next()">
-        ⏭
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <polygon points="6,5 16,12 6,19" fill="currentColor" stroke="none" />
+          <line x1="18" y1="5" x2="18" y2="19" />
+        </svg>
       </button>
     </div>
 
@@ -61,63 +90,16 @@ const statusText = computed(() => {
 <style scoped>
 .player {
   position: relative;
-  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--surface) 94%, transparent);
   backdrop-filter: blur(10px);
-  padding: 10px 12px;
-}
-
-.progress {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 2px;
-  width: 100%;
-  background: var(--mood);
-  transform-origin: left;
-  transform: scaleX(0);
-}
-
-.main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.play {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: var(--mood);
-  color: #0d1014;
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-/* ▶ 글리프는 시각적 무게중심이 왼쪽에 쏠려 원 안에서 왼쪽으로 치우쳐 보인다 */
-.play__icon {
-  margin-left: 2px;
-}
-
-.play--pulse {
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--mood) 60%, transparent);
-  animation: pulse 2s ease-out infinite;
-}
-
-@keyframes pulse {
-  to {
-    box-shadow: 0 0 0 16px transparent;
-  }
+  padding: 10px 16px 14px;
 }
 
 .now {
-  flex: 1;
-  min-width: 0;
+  display: block;
+  width: 100%;
   min-height: 44px;
   text-align: left;
   border-radius: 8px;
@@ -153,19 +135,112 @@ const statusText = computed(() => {
   font-weight: 500;
 }
 
-.ctrl {
+/* ---------- 진행 라인 + 점 ---------- */
+.seek {
+  position: relative;
+  height: 14px;
+  margin: 8px 7px 4px; /* 좌우 여백 = 점 반지름, 점이 잘리지 않게 */
+  display: flex;
+  align-items: center;
+}
+
+.seek__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--border);
+}
+
+.seek__fill {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--text);
+  transition: width 0.2s linear;
+}
+
+.seek__dot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text);
+  transform: translateX(-50%);
+  transition: left 0.2s linear;
+}
+
+/* ---------- 컨트롤 ---------- */
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  margin-top: 6px;
+}
+
+.ctrl,
+.play {
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
+  color: var(--text);
+  background: transparent;
+}
+
+.ctrl {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  font-size: 0.85rem;
+}
+
+.ctrl svg,
+.play svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .ctrl:hover:not(:disabled) {
-  border-color: var(--mood);
-  color: var(--text);
+  background: var(--surface-2);
+}
+
+.ctrl:disabled {
+  color: var(--text-faint);
+}
+
+/* 가운데 재생 버튼: 라인 원형 테두리 */
+.play {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1.5px solid var(--text);
+}
+
+.play svg {
+  width: 24px;
+  height: 24px;
+}
+
+.play:hover {
+  background: var(--surface-2);
+}
+
+.play--pulse {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--mood) 60%, transparent);
+  animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+  to {
+    box-shadow: 0 0 0 16px transparent;
+  }
 }
 
 .err {

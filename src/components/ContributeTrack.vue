@@ -1,14 +1,21 @@
 <script setup>
-import { computed } from 'vue'
-import { RouterLink } from 'vue-router'
+import { computed, inject, ref } from 'vue'
+import RegisterTrackModal from './RegisterTrackModal.vue'
 
 const props = defineProps({
   places: { type: Array, required: true },
   moodLabel: { type: String, required: true },
 })
 
+const app = inject('app')
+
 // 지금 위치에서 가장 가까운 장소를 등록 대상으로 제안한다
 const nearest = computed(() => props.places[0] ?? null)
+
+// 지금 듣고 있는 곡 — 이 곡이 등록 대상이 된다
+const nowPlaying = computed(() => app.player.currentTrack.value)
+
+const isModalOpen = ref(false)
 </script>
 
 <template>
@@ -19,8 +26,8 @@ const nearest = computed(() => props.places[0] ?? null)
     </header>
 
     <p class="pitch">
-      지금 계신 곳에 어울리는 곡을 알고 있나요?
-      <strong>직접 추천해서 지도에 꽂아주세요.</strong>
+      지금 듣고 있는 곡, 이 장소와 잘 어울리나요?
+      <strong>버튼 한 번으로 이 자리에 꽂아주세요.</strong>
       다른 사람들이 이 장소에 왔을 때 그 곡을 듣게 됩니다.
     </p>
 
@@ -33,7 +40,17 @@ const nearest = computed(() => props.places[0] ?? null)
       <span class="badge badge--mood">{{ moodLabel }}</span>
     </div>
 
-    <RouterLink to="/community/new" class="cta">＋ 곡 추천하기</RouterLink>
+    <div v-if="nowPlaying" class="target">
+      <span class="target__icon" aria-hidden="true">♪</span>
+      <div class="target__body">
+        <p class="target__label">지금 재생 중</p>
+        <p class="target__place">{{ nowPlaying.title }}</p>
+      </div>
+    </div>
+
+    <button class="cta" @click="isModalOpen = true">＋ 지금 듣는 곡 여기에 등록</button>
+
+    <RegisterTrackModal v-if="isModalOpen" @close="isModalOpen = false" />
   </section>
 </template>
 

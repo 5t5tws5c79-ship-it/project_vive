@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import CurationMap from '../components/CurationMap.vue'
+import RegisterTrackModal from '../components/RegisterTrackModal.vue'
 import { CURATIONS } from '../data/placeholder'
 import { moodById } from '../config/moods'
 
@@ -15,6 +16,7 @@ const SORTS = [
 const sort = ref('recent')
 const query = ref('')
 const view = ref('map') // 'map' | 'list'
+const isRegisterOpen = ref(false)
 
 const list = computed(() => {
   const q = query.value.trim()
@@ -96,8 +98,10 @@ const list = computed(() => {
     </div>
   </RouterLink>
 
-  <!-- 글쓰기 진입점 -->
-  <RouterLink to="/community/new" class="write">＋ 이 장소의 곡 등록하기</RouterLink>
+  <!-- 곡 등록 진입점: 지금 듣는 곡을 현재 위치에 등록하는 팝업 -->
+  <button class="write" @click="isRegisterOpen = true">＋ 이 장소의 곡 등록하기</button>
+
+  <RegisterTrackModal v-if="isRegisterOpen" @close="isRegisterOpen = false" />
 </template>
 
 <style scoped>
@@ -262,6 +266,7 @@ const list = computed(() => {
 .write {
   display: grid;
   place-items: center;
+  width: 100%;
   min-height: 50px;
   border-radius: var(--radius);
   border: 1px dashed color-mix(in srgb, var(--mood) 45%, var(--border));

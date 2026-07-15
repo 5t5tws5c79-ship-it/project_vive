@@ -16,6 +16,7 @@ export function useCrossfadePlayer(moodId) {
   const currentTrack = ref(null)
   const isCrossfading = ref(false)
   const elapsedMs = ref(0)
+  const isRepeat = ref(false) // 반복 켜짐 시 주기마다 같은 트랙을 다시 재생
 
   let engine = null
   let activeDeck = 0
@@ -67,9 +68,17 @@ export function useCrossfadePlayer(moodId) {
     }, fade * 1000)
   }
 
-  function advance() {
+  function advance(force = false) {
     if (playlist.value.length === 0) return
-    trackIndex = (trackIndex + 1) % playlist.value.length // 리스트 끝나면 순환
+    if (force || !isRepeat.value) {
+      trackIndex = (trackIndex + 1) % playlist.value.length // 리스트 끝나면 순환
+    }
+    crossfadeTo(playlist.value[trackIndex])
+  }
+
+  function retreat() {
+    if (playlist.value.length === 0) return
+    trackIndex = (trackIndex - 1 + playlist.value.length) % playlist.value.length
     crossfadeTo(playlist.value[trackIndex])
   }
 
@@ -129,7 +138,16 @@ export function useCrossfadePlayer(moodId) {
 
   function next() {
     if (!isUnlocked.value) return
-    advance()
+    advance(true) // 수동 다음은 반복 모드여도 항상 다음 곡으로
+  }
+
+  function prev() {
+    if (!isUnlocked.value) return
+    retreat()
+  }
+
+  function toggleRepeat() {
+    isRepeat.value = !isRepeat.value
   }
 
   function teardown() {
@@ -175,5 +193,8 @@ export function useCrossfadePlayer(moodId) {
     remainingSec,
     toggle,
     next,
+    prev,
+    isRepeat,
+    toggleRepeat,
   }
 }
