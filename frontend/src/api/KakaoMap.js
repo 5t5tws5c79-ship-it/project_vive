@@ -30,7 +30,7 @@ export function getNearbyPlaces(lat, lng) {
         },
         {
           location: location,
-          radius: 500
+          radius: 100
         }
       );
 
