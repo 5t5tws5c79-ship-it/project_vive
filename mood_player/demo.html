@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>무드 플레이어 — 검증용 데모 (파일 음악 + LLM)</title>
+<style>
+  :root{ --bg:#14161c; --panel:#1c1f28; --panel2:#232634; --line:#303444;
+    --text:#e7e9f0; --dim:#9aa0b4; --accent:#6aa9c9; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Pretendard","Malgun Gothic",system-ui,sans-serif;line-height:1.5}
+  .wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:20px;margin:0 0 2px}
+  .sub{color:var(--dim);font-size:13px;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .card h2{font-size:12px;letter-spacing:.04em;color:var(--dim);text-transform:uppercase;margin:0 0 10px;font-weight:600}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;padding:8px 12px;cursor:pointer}
+  button:hover{border-color:var(--accent)}
+  .chip{padding:6px 10px;font-size:13px;border-radius:999px}
+  .chip.on{background:var(--accent);color:#0c0e13;border-color:var(--accent)}
+  .poi{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:14px}
+  .poi:last-child{border-bottom:0}
+  .badge{font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:6px;padding:1px 6px;margin-right:6px}
+  .dist{color:var(--dim);font-size:12px;white-space:nowrap}
+  .moodcard{border-color:var(--accent)}
+  .moodlabel{font-size:32px;font-weight:700;color:var(--accent);line-height:1.1}
+  .nowplay{font-size:13px;color:var(--accent);margin-top:4px}
+  .reason{color:var(--dim);font-size:13px;margin-top:8px;min-height:18px}
+  .meta{font-size:12px;color:var(--dim);margin-top:8px}
+  .tag{display:inline-block;font-size:11px;border-radius:6px;padding:1px 7px;margin-right:6px}
+  .tag.llm{background:#2a3550;color:#9fc0ff;border:1px solid #3a4a70}
+  .tag.rule{background:#3a2f2a;color:#e0b58f;border:1px solid #5a453a}
+  .pulse{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:6px}
+  .pulse.live{animation:p 1.5s ease-out infinite}
+  @keyframes p{0%{box-shadow:0 0 0 0 rgba(106,169,201,.5)}100%{box-shadow:0 0 0 12px rgba(106,169,201,0)}}
+  input[type=range]{width:150px;accent-color:var(--accent)}
+  input[type=password]{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;min-width:200px;font:inherit}
+  .gate{position:fixed;inset:0;background:rgba(10,11,15,.92);display:flex;align-items:center;
+    justify-content:center;flex-direction:column;gap:14px;z-index:10}
+  .gate button{font-size:18px;padding:14px 28px;border-radius:12px;background:var(--accent);color:#0c0e13;border:0}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;background:#5a6}
+  .dot.off{background:#a55}
+  .foot{color:var(--dim);font-size:11px;margin-top:22px;line-height:1.7}
+  .note{font-size:12px;color:#d8b978;margin-top:8px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <div style="font-size:15px;color:#cfd3e0">실제 음악 파일이 재생됩니다 · 볼륨 확인</div>
+  <button id="startBtn">▶ 무드 플레이어 시작</button>
+  <div style="font-size:12px;color:#7d8398" id="keyGateNote"></div>
+</div>
+
+<div class="wrap">
+  <h1>무드 플레이어 <span style="color:var(--dim);font-weight:400;font-size:14px">검증용 데모 · 파일 음악 + LLM</span></h1>
+  <div class="sub">위치 → 근처 장소 → 무드 추론(LLM 주 / 규칙 폴백) → 무드별 음원 크로스페이드</div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>위치 · 시간</h2>
+      <div class="row" id="presetRow"></div>
+      <div class="row" style="margin-top:8px"><button id="gpsBtn">📍 내 위치(GPS)</button></div>
+      <div class="meta" id="locMeta"></div>
+      <div class="meta" id="timeMeta"></div>
+      <div class="note" id="locNote"></div>
+    </div>
+
+    <div class="card moodcard" id="moodCard">
+      <h2>현재 무드</h2>
+      <div class="moodlabel" id="moodLabel">—</div>
+      <div class="nowplay" id="nowPlay"></div>
+      <div class="reason" id="moodReason">위치를 고르면 근처 장소로 무드를 추론합니다</div>
+      <div class="meta" id="moodMeta"></div>
+    </div>
+
+    <div class="card">
+      <h2>근처 장소 (가까운 순 5)</h2>
+      <div id="nearby"></div>
+    </div>
+
+    <div class="card">
+      <h2>무드 오디션 — 6종 음원</h2>
+      <div class="row" id="auditionRow"></div>
+      <div class="meta">데이터로 안 뜨는 무드도 여기서 음원을 확인할 수 있습니다.</div>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <h2>플레이어</h2>
+      <div class="row">
+        <span class="pulse" id="pulse"></span>
+        <button id="playBtn">▶ 재생</button>
+        <button id="nextBtn">⏭ 다음 곡</button>
+        <span style="color:var(--dim);font-size:13px">볼륨</span>
+        <input type="range" id="vol" min="0" max="100" value="85" />
+      </div>
+      <div class="row" style="margin-top:12px">
+        <span id="keyStatus"><span class="dot off"></span>LLM 키 확인 중…</span>
+        <input type="password" id="key" placeholder="OpenAI 키 (config.js 자동 주입 / 없으면 붙여넣기)" />
+        <button id="applyKey">적용</button>
+      </div>
+      <div class="note" id="note"></div>
+      <audio id="a0" preload="none"></audio>
+      <audio id="a1" preload="none"></audio>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <h2>판단 근거 (디버그) — LLM이 실제로 받은 장소 & 원문 응답</h2>
+      <pre id="dbg" style="white-space:pre-wrap;font-size:12px;color:var(--dim);margin:0;line-height:1.6">위치를 고르면 표시됩니다</pre>
+    </div>
+  </div>
+
+  <div class="foot">
+    장소 데이터: 한국관광공사 Tour API(TourAPI 4.0) · 공공누리 제3유형(출처표시+변경금지)<br>
+    음악(기본값): 로열티프리 SoundHelix — 배포 시 Cloudflare R2 URL로 교체 (audio.js) · 무드 추론: OpenAI gpt-5-mini
+  </div>
+</div>
+
+<script src="./config.js"></script>
+<script src="./poi.js"></script>
+<script src="./audio.js"></script>
+<script>
+/* ---------- 무드 정의 (분위기 우선, 다대일) ---------- */
+const MOODS = {
+  calm:   {label:"고요", color:"#6aa9c9"}, muse:   {label:"사색", color:"#8f86c9"},
+  flutter:{label:"설렘", color:"#e6a15c"}, vivid:  {label:"활기", color:"#e0655f"},
+  savory: {label:"미식", color:"#cf8f6a"}, dreamy: {label:"몽환", color:"#6f7fc9"},
+};
+const TYPE_TO_MOOD = {"12":"calm","25":"calm","14":"muse","15":"flutter","28":"vivid","38":"vivid","39":"savory","32":"dreamy"};
+const TYPE_LABEL   = {"12":"관광지","14":"문화시설","15":"축제공연행사","25":"여행코스","28":"레포츠","32":"숙박","38":"쇼핑","39":"음식점"};
+const PRESETS = [
+  {name:"광화문·종로", lat:37.5759, lng:126.9769},
+  {name:"성수·건대",   lat:37.5445, lng:127.0557},
+  {name:"압구정·강남", lat:37.5270, lng:127.0276},
+  {name:"홍대·마포",   lat:37.5561, lng:126.9236},
+];
+const POI = window.POI || [];
+const CONF = 0.45;
+
+/* ---------- 지오 / 시간 ---------- */
+function haversine(aLat,aLng,bLat,bLng){
+  const R=6371000,r=Math.PI/180,dLat=(bLat-aLat)*r,dLng=(bLng-aLng)*r;
+  const s=Math.sin(dLat/2)**2+Math.cos(aLat*r)*Math.cos(bLat*r)*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function nearby(loc,n){ return POI.map(p=>({...p,dist:haversine(loc.lat,loc.lng,p.lat,p.lng)})).sort((a,b)=>a.dist-b.dist).slice(0,n); }
+function kstHour(){ return Number(new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Seoul',hour:'2-digit',hour12:false}).format(new Date()))%24; }
+function isNight(h){ return h>=21||h<5; }
+
+/* ---------- 무드 추론 (LLM 주 + 규칙 폴백) ---------- */
+function ruleMood(list,hour){
+  const c={}; list.forEach(p=>{const m=TYPE_TO_MOOD[p.typeId]||"calm"; c[m]=(c[m]||0)+1;});
+  let best="calm",bestN=-1; for(const m in c){ if(c[m]>bestN){bestN=c[m];best=m;} }
+  let reason=`근처 ${list.length}곳 중 ${bestN}곳이 '${MOODS[best].label}' 성향`;
+  if(isNight(hour) && (best==="calm"||best==="muse")){ best="dreamy"; reason=`야간(${hour}시·KST) 가중 → 몽환`; }
+  return {moodId:best, confidence:list.length?bestN/list.length:0, reason, decidedBy:"rule"};
+}
+async function llmMood(list,hour){
+  const key=getKey(); if(!key) throw new Error("no key");
+  const sys="너는 위치 기반 음악 무드 큐레이터다. 아래는 사용자 현재 위치 주변 장소 목록(가까운 순, 거리 포함)이다. 이 동네에 흐르는 전체 분위기를 판단해 6개 무드 중 가장 어울리는 하나를 골라라. "
+    +"무드: calm(고요:잔잔·정적, 사찰·공원·산책), muse(사색:미술관·박물관·고궁), flutter(설렘:축제·공연·핫플), vivid(활기:시장·번화가·쇼핑·레포츠), savory(미식:맛집·카페), dreamy(몽환:밤·야경·해안). "
+    +"가까운 장소일수록 크게 반영. 시간대도 반영(밤 21~5시면 몽환·고요 쪽 고려). reason은 한국어 한 문장.";
+  const usr="주변 장소:\n"+list.map((p,i)=>`${i+1}. ${p.title} (${TYPE_LABEL[p.typeId]||p.type}) - ${Math.round(p.dist)}m`).join("\n")+`\n시간대: ${hour}시 (한국시간)`;
+  lastSent=usr;
+  const body={ model:"gpt-5-mini", messages:[{role:"system",content:sys},{role:"user",content:usr}],
+    reasoning_effort:"minimal", max_completion_tokens:500,
+    response_format:{type:"json_schema",json_schema:{name:"mood",strict:true,schema:{type:"object",additionalProperties:false,
+      properties:{moodId:{type:"string",enum:["calm","muse","flutter","vivid","savory","dreamy"]},confidence:{type:"number"},reason:{type:"string"}},
+      required:["moodId","confidence","reason"]}}} };
+  const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",
+    headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok){ throw new Error("http "+r.status); }
+  const j=await r.json(); const c=j.choices&&j.choices[0]&&j.choices[0].message.content;
+  if(!c) throw new Error("empty output");
+  const o=JSON.parse(c); lastRaw=c;
+  return {moodId:o.moodId, confidence:o.confidence, reason:o.reason, decidedBy:"llm"};
+}
+const moodCache={};
+let lastSent="", lastRaw="";
+function signature(list,hour){ return list.map(p=>p.title).join("|")+"|"+(isNight(hour)?"N":"D"); }
+
+/* ---------- 오디오: <audio> 볼륨 크로스페이드 ---------- */
+let au=[null,null], active=0, fadeTimer=null, vol=85, curMusicMood=null, curTrackIdx=0;
+function moodUrls(id){ return (window.MOOD_AUDIO&&window.MOOD_AUDIO[id]&&window.MOOD_AUDIO[id].urls)||[]; }
+function moodMusicLabel(id){ return (window.MOOD_AUDIO&&window.MOOD_AUDIO[id]&&window.MOOD_AUDIO[id].label)||id; }
+function crossfade(url){
+  const inA=1-active, inEl=au[inA], outEl=au[active];
+  inEl.src=url; inEl.volume=0;
+  const pr=inEl.play(); if(pr&&pr.catch) pr.catch(e=>setNote("오디오 재생 차단/오류: "+e.message));
+  let s=0; const steps=24, dur=3000;
+  if(fadeTimer)clearInterval(fadeTimer);
+  fadeTimer=setInterval(()=>{ s++; const r=s/steps;
+    inEl.volume=Math.min(1,(vol/100)*r);
+    outEl.volume=Math.max(0,(vol/100)*(1-r));
+    if(s>=steps){ clearInterval(fadeTimer); try{outEl.pause();}catch(x){} active=inA; }
+  }, dur/steps);
+}
+function setMoodMusic(id){
+  const us=moodUrls(id);
+  if(!us.length){ setNote("무드 '"+id+"' 음원 URL이 audio.js에 없습니다"); return; }
+  curMusicMood=id; curTrackIdx=0; crossfade(us[0]); render();
+}
+function nextTrack(){ if(!curMusicMood)return; const us=moodUrls(curMusicMood); if(!us.length)return; curTrackIdx=(curTrackIdx+1)%us.length; crossfade(us[curTrackIdx]); }
+
+/* ---------- 상태 / 렌더 ---------- */
+let loc={lat:PRESETS[0].lat,lng:PRESETS[0].lng,source:"manual",name:PRESETS[0].name};
+let near=[], curMoodId=null, lastRes=null, playing=false, analyzing=false;
+function accent(c){ document.documentElement.style.setProperty("--accent",c); }
+function getKey(){ const el=document.getElementById("key"); const v=el&&el.value.trim(); return v||window.OPENAI_KEY||""; }
+function setNote(t){ document.getElementById("note").textContent=t||""; }
+function render(){
+  const mood=curMoodId?MOODS[curMoodId]:null;
+  if(mood) accent(mood.color);
+  document.getElementById("moodLabel").textContent=mood?mood.label:"—";
+  document.getElementById("nowPlay").textContent=curMusicMood?("♪ "+moodMusicLabel(curMusicMood)):"";
+  const h=kstHour();
+  document.getElementById("timeMeta").textContent=`한국시간 ${String(h).padStart(2,"0")}시 · ${isNight(h)?"야간(몽환 가중)":"주간"}`;
+  document.getElementById("locMeta").textContent=`${loc.name||"현재 위치"} · ${loc.lat.toFixed(4)}, ${loc.lng.toFixed(4)} · 출처:${loc.source}`;
+  if(analyzing){ document.getElementById("moodReason").textContent="무드 분석 중…(LLM)"; }
+  else if(lastRes){ document.getElementById("moodReason").textContent=lastRes.reason; }
+  if(lastRes){
+    const t=lastRes.decidedBy==="llm"?'<span class="tag llm">LLM</span>':'<span class="tag rule">규칙</span>';
+    document.getElementById("moodMeta").innerHTML=t+`확신도 ${(lastRes.confidence*100||0).toFixed(0)}%`;
+  }
+  document.getElementById("nearby").innerHTML=near.map(p=>{
+    const km=p.dist>=1000?(p.dist/1000).toFixed(1)+"km":Math.round(p.dist)+"m";
+    return `<div class="poi"><span><span class="badge">${TYPE_LABEL[p.typeId]||p.type}</span>${p.title}</span><span class="dist">${km}</span></div>`;
+  }).join("");
+  [...document.querySelectorAll("#auditionRow .chip")].forEach(b=>b.classList.toggle("on",b.dataset.m===curMusicMood));
+  [...document.querySelectorAll("#presetRow .chip")].forEach(b=>b.classList.toggle("on",b.dataset.n===loc.name));
+  document.getElementById("playBtn").textContent=playing?"⏸ 일시정지":"▶ 재생";
+  document.getElementById("pulse").classList.toggle("live",playing);
+  const hasKey=!!getKey();
+  document.getElementById("keyStatus").innerHTML=`<span class="dot ${hasKey?'':'off'}"></span>${hasKey?"LLM 켜짐 (gpt-5-mini)":"규칙 폴백만 (키 없음)"}`;
+}
+function renderDebug(){
+  const h=kstHour();
+  const fed=near.map((p,i)=>`  ${i+1}. ${p.title} (${TYPE_LABEL[p.typeId]||p.type}) - ${Math.round(p.dist)}m`).join("\n");
+  let out=`[근처 5곳 · 무드 판정 입력]\n${fed}\n시간대: ${h}시(KST)${isNight(h)?" · 야간":""}\n\n`;
+  out += (lastRes&&lastRes.decidedBy==="llm") ? `[LLM 원문 응답]\n${lastRaw}` : `[규칙 폴백] ${lastRes?lastRes.reason:""}`;
+  const el=document.getElementById("dbg"); if(el) el.textContent=out;
+}
+function applyMood(res){
+  lastRes=res; curMoodId=res.moodId; render(); renderDebug();
+  if(playing && res.moodId!==curMusicMood) setMoodMusic(res.moodId);
+}
+async function updateLocation(newLoc){
+  loc=newLoc; near=nearby(loc,5); const hour=kstHour();
+  if(getKey() && navigator.onLine){          // LLM 주 → 실패 시에만 규칙
+    analyzing=true; render(); renderDebug();  // 현재 무드 유지 · "분석 중"만 표시
+    try{
+      const sig=signature(near,hour);
+      let res=moodCache[sig];
+      if(!res){ res=await llmMood(near,hour); if(res.confidence<CONF) res=ruleMood(near,hour); moodCache[sig]=res; }
+      analyzing=false; applyMood(res);
+    }catch(e){ analyzing=false; setNote("LLM 실패 → 규칙 ("+e.message+")"); applyMood(ruleMood(near,hour)); }
+  } else {
+    applyMood(ruleMood(near,hour));           // 키 없음/오프라인일 때만 규칙
+  }
+}
+
+/* ---------- 재생 제어 ---------- */
+function play(){ playing=true; if(!curMusicMood && curMoodId) setMoodMusic(curMoodId); else { try{au[active].play();}catch(x){} } render(); }
+function pause(){ playing=false; try{au[active].pause();}catch(x){} if(fadeTimer)clearInterval(fadeTimer); render(); }
+
+/* ---------- 초기화 ---------- */
+function build(){
+  au[0]=document.getElementById("a0"); au[1]=document.getElementById("a1"); au[0].volume=0; au[1].volume=0;
+  const pr=document.getElementById("presetRow");
+  PRESETS.forEach(p=>{ const b=document.createElement("button"); b.className="chip"; b.dataset.n=p.name; b.textContent=p.name;
+    b.onclick=()=>updateLocation({lat:p.lat,lng:p.lng,source:"manual",name:p.name}); pr.appendChild(b); });
+  const ar=document.getElementById("auditionRow");
+  Object.keys(MOODS).forEach(id=>{ const b=document.createElement("button"); b.className="chip"; b.dataset.m=id; b.textContent=MOODS[id].label;
+    b.onclick=()=>{ curMoodId=id; lastRes={moodId:id,confidence:1,reason:"오디션(수동 선택)",decidedBy:"rule"}; if(playing)setMoodMusic(id); render(); }; ar.appendChild(b); });
+  document.getElementById("gpsBtn").onclick=()=>{
+    const note=document.getElementById("locNote"); note.textContent="위치 확인 중…";
+    if(!navigator.geolocation){ note.textContent="위치 미지원 → 프리셋 사용"; return; }
+    navigator.geolocation.getCurrentPosition(
+      pos=>{ note.textContent=""; updateLocation({lat:pos.coords.latitude,lng:pos.coords.longitude,source:"gps",name:"내 위치"}); },
+      err=>{ note.textContent="위치 거부/불가 → 프리셋으로 확인 ["+err.message+"]"; });
+  };
+  document.getElementById("playBtn").onclick=()=>{ playing?pause():play(); };
+  document.getElementById("nextBtn").onclick=()=>nextTrack();
+  document.getElementById("vol").oninput=e=>{ vol=Number(e.target.value); try{au[active].volume=vol/100;}catch(x){} };
+  document.getElementById("applyKey").onclick=()=>{ render(); updateLocation(loc); };
+
+  if(window.OPENAI_KEY){ document.getElementById("key").value=window.OPENAI_KEY; }
+  document.getElementById("keyGateNote").textContent = getKey()? "LLM 켜짐 — 위치별로 무드를 실제 추론합니다" : "키 없음 — 규칙 폴백으로 동작(정상)";
+  updateLocation(loc);
+}
+document.getElementById("startBtn").onclick=()=>{ document.getElementById("gate").style.display="none"; play(); };
+build();
+</script>
+</body>
+</html>

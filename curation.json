@@ -1,0 +1,91 @@
+{
+  "_comment": "무드별 음원 큐레이션. 로컬은 audio/<mood>/ 폴더로 정리, 배포 소스는 Cloudflare R2 호스팅. 무드 키/라벨은 mood_player/vue/moodConfig.js 의 MOODS 를 따른다.",
+  "_url": "각 트랙 재생 URL = r2BaseUrl + '/' + r2Key. audio/ 폴더를 통째로 R2 에 올리므로 r2Key 는 로컬 file 경로와 동일하다.",
+  "r2BaseUrl": "https://pub-3fc25dd84d8b400c8e7c624382630552.r2.dev",
+  "moods": {
+    "muse": {
+      "label": "사색",
+      "tracks": [
+        {
+          "title": "Frank Sinatra - Fly Me To The Moon ft. Count Basie",
+          "file": "audio/muse/muse-1.mp3",
+          "r2Key": "audio/muse/muse-1.mp3",
+          "source": "https://www.youtube.com/watch?v=JYuyWrkwpok"
+        }
+      ]
+    },
+    "calm": {
+      "label": "고요",
+      "tracks": [
+        {
+          "title": "David Kushner - Daylight",
+          "file": "audio/calm/calm-1.mp3",
+          "r2Key": "audio/calm/calm-1.mp3",
+          "source": "https://www.youtube.com/watch?v=73E0BnFs7S4"
+        }
+      ]
+    },
+    "savory": {
+      "label": "미식",
+      "tracks": [
+        {
+          "title": "手嶌葵 (Aoi Teshima) - 森のちいさなレストラン",
+          "file": "audio/savory/savory-1.mp3",
+          "r2Key": "audio/savory/savory-1.mp3",
+          "source": "https://www.youtube.com/watch?v=byN1OfaEfvU"
+        }
+      ]
+    },
+    "flutter": {
+      "label": "설렘",
+      "tracks": [
+        {
+          "title": "The Walters - I Love You So",
+          "file": "audio/flutter/flutter-1.mp3",
+          "r2Key": "audio/flutter/flutter-1.mp3",
+          "source": "https://www.youtube.com/watch?v=u9DJJa2P_Fc"
+        },
+        {
+          "title": "Lauv - Steal The Show (From \"Elemental\")",
+          "file": "audio/flutter/flutter-2.mp3",
+          "r2Key": "audio/flutter/flutter-2.mp3",
+          "source": "https://www.youtube.com/watch?v=DwuJeGYlYyw"
+        }
+      ]
+    },
+    "vivid": {
+      "label": "활기",
+      "tracks": [
+        {
+          "title": "RESCENE (리센느) - LOVE ATTACK (러브어택)",
+          "file": "audio/vivid/vivid-1.mp3",
+          "r2Key": "audio/vivid/vivid-1.mp3",
+          "source": "https://www.youtube.com/watch?v=VnqgmOJaMGc"
+        },
+        {
+          "title": "Take on Me",
+          "file": "audio/vivid/vivid-2.mp3",
+          "r2Key": "audio/vivid/vivid-2.mp3",
+          "source": "https://www.youtube.com/watch?v=MIgK3zOk0zg"
+        }
+      ]
+    },
+    "dreamy": {
+      "label": "몽환",
+      "tracks": [
+        {
+          "title": "in the pool",
+          "file": "audio/dreamy/dreamy-1.mp3",
+          "r2Key": "audio/dreamy/dreamy-1.mp3",
+          "source": "https://www.youtube.com/watch?v=rOWDEfnWx5s"
+        },
+        {
+          "title": "Lauv - I Like Me Better",
+          "file": "audio/dreamy/dreamy-2.mp3",
+          "r2Key": "audio/dreamy/dreamy-2.mp3",
+          "source": "https://www.youtube.com/watch?v=a7fzkqLozwA"
+        }
+      ]
+    }
+  }
+}
