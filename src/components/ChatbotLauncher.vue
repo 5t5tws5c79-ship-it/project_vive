@@ -1,11 +1,58 @@
 <script setup>
-import { ref } from 'vue'
-import { CHAT_SAMPLE } from '../data/placeholder'
+import { ref, nextTick } from 'vue'
+import { chatComplete, getApiKey } from '../lib/chat'
 
-// 【플레이스홀더】 챗봇이 들어갈 자리.
 // 데스크톱: 우하단 플로팅 패널 / 모바일: 전체화면 전환 (요구사항의 챗봇 UI 규격)
-// 실제 연동 시 이 컴포넌트 안에서 대화 히스토리를 들고, 입력창을 활성화하면 된다.
+// 브라우저에서 OpenAI를 직접 호출한다(백엔드 없음). feat/audio_player의 엔진 패턴 참조.
 const isOpen = ref(false)
+const logEl = ref(null)
+
+// 화면용 대화 히스토리 — role: 'bot'|'user' (CSS .msg--bot/.msg--user 와 매칭)
+const messages = ref([
+  { role: 'bot', text: '안녕하세요! 지금 계신 곳 근처의 장소나 어울리는 곡을 물어보세요.' },
+])
+const draft = ref('')
+const sending = ref(false)
+const hasKey = getApiKey() !== ''
+
+async function scrollToEnd() {
+  await nextTick()
+  if (logEl.value) logEl.value.scrollTop = logEl.value.scrollHeight
+}
+
+async function send() {
+  const text = draft.value.trim()
+  if (!text || sending.value) return
+
+  messages.value.push({ role: 'user', text })
+  draft.value = ''
+  sending.value = true
+  scrollToEnd()
+
+  if (!hasKey) {
+    messages.value.push({
+      role: 'bot',
+      text: 'OpenAI 키가 설정되지 않았습니다. .env에 VITE_OPENAI_API_KEY를 추가해 주세요.',
+    })
+    sending.value = false
+    scrollToEnd()
+    return
+  }
+
+  try {
+    // 방금 넣은 사용자 메시지까지 포함한 히스토리를 그대로 전달
+    const reply = await chatComplete(messages.value)
+    messages.value.push({ role: 'bot', text: reply })
+  } catch (err) {
+    messages.value.push({
+      role: 'bot',
+      text: `응답을 가져오지 못했어요 (${err.message}). 잠시 후 다시 시도해 주세요.`,
+    })
+  } finally {
+    sending.value = false
+    scrollToEnd()
+  }
+}
 </script>
 
 <template>
@@ -23,24 +70,34 @@ const isOpen = ref(false)
       <header class="panel__head">
         <div>
           <p class="panel__title">여기 챗봇</p>
-          <p class="panel__sub">플레이스홀더 · 연동 예정</p>
+          <p class="panel__sub">{{ hasKey ? '무엇이든 물어보세요' : 'API 키 미설정' }}</p>
         </div>
         <button class="panel__close" aria-label="닫기" @click="isOpen = false">✕</button>
       </header>
 
-      <div class="log">
-        <div v-for="(msg, i) in CHAT_SAMPLE" :key="i" class="msg" :class="`msg--${msg.role}`">
+      <div ref="logEl" class="log">
+        <div v-for="(msg, i) in messages" :key="i" class="msg" :class="`msg--${msg.role}`">
           {{ msg.text }}
+        </div>
+        <div v-if="sending" class="msg msg--bot msg--typing" aria-label="응답 작성 중">
+          <span class="dot" /><span class="dot" /><span class="dot" />
         </div>
       </div>
 
-      <form class="compose" @submit.prevent>
+      <form class="compose" @submit.prevent="send">
         <input
+          v-model="draft"
           class="compose__input"
-          placeholder="챗봇 연동 예정 — 아직 입력할 수 없습니다"
-          disabled
+          placeholder="메시지를 입력하세요"
+          :disabled="sending"
+          aria-label="메시지 입력"
         />
-        <button class="compose__send" type="submit" disabled aria-label="보내기">↑</button>
+        <button
+          class="compose__send"
+          type="submit"
+          :disabled="sending || !draft.trim()"
+          aria-label="보내기"
+        >↑</button>
       </form>
     </div>
   </div>
@@ -148,6 +205,43 @@ const isOpen = ref(false)
   border-bottom-right-radius: 4px;
   background: color-mix(in srgb, var(--mood) 26%, transparent);
   color: var(--text);
+}
+
+/* 응답 대기 중 점 3개 */
+.msg--typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.msg--typing .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  animation: blink 1.2s ease-in-out infinite;
+}
+
+.msg--typing .dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.msg--typing .dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes blink {
+  0%, 60%, 100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+.compose__send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .compose {
