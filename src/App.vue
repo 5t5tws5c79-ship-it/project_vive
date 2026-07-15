@@ -26,6 +26,27 @@ const isPending = computed(() => status.value !== 'ready' || isLoading.value)
 // 하단 플레이어를 누르면 열리는 재생 정보 + 설정 시트
 const isSheetOpen = ref(false)
 
+// 하단 도크(플레이어+내비)의 실제 높이를 재서 --dock-h로 흘려보낸다.
+// 곡 제목이 길어 줄바꿈되거나 에러 메시지가 뜨는 등 높이가 바뀌어도
+// 본문/챗봇이 항상 도크 위로 정확히 여백을 두도록(하드코딩된 150px 대신).
+const dockEl = ref(null)
+let dockObserver
+
+function syncDockHeight() {
+  if (!dockEl.value) return
+  document.documentElement.style.setProperty('--dock-h', `${dockEl.value.offsetHeight}px`)
+}
+
+onMounted(() => {
+  syncDockHeight()
+  dockObserver = new ResizeObserver(syncDockHeight)
+  dockObserver.observe(dockEl.value)
+})
+
+onBeforeUnmount(() => {
+  dockObserver?.disconnect()
+})
+
 // 플레이어는 페이지를 넘겨도 계속 재생돼야 하므로 셸에 두고 아래로 흘려보낸다
 provide('app', {
   location,
@@ -86,7 +107,7 @@ onMounted(locate)
     <ChatbotLauncher />
 
     <!-- 하단 고정: 플레이어 + 탭 내비 (페이지를 넘겨도 재생이 끊기지 않는다) -->
-    <div class="dock">
+    <div ref="dockEl" class="dock">
       <PlayerBar :player="player" :mood-label="mood.label" @expand="isSheetOpen = true" />
       <AppNav />
     </div>
@@ -113,8 +134,9 @@ onMounted(locate)
   z-index: 1;
   max-width: var(--shell-max);
   margin: 0 auto;
-  /* 하단 도크(플레이어+내비)에 가리지 않도록 여백 확보 */
-  padding: 28px 16px calc(150px + env(safe-area-inset-bottom));
+  /* 하단 도크(플레이어+내비)에 가리지 않도록 여백 확보. --dock-h는 App.vue의
+     ResizeObserver가 실측해서 채운다(도크 자체 safe-area 패딩 포함) */
+  padding: 28px 16px calc(var(--dock-h, 150px) + 14px);
 }
 
 .header {
@@ -171,9 +193,9 @@ onMounted(locate)
   bottom: 0;
   z-index: 20;
   display: grid;
-  gap: 0;
-  /* 본문(.app)과 동일한 좌우 여백 */
-  padding: 0 16px env(safe-area-inset-bottom);
+  gap: 10px;
+  /* 본문(.app)과 동일한 좌우 여백 + 화면 최하단과도 여백을 둔다 */
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom));
   background: linear-gradient(to top, var(--bg) 72%, transparent);
 }
 

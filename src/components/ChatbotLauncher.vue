@@ -107,8 +107,9 @@ async function send() {
 .fab {
   position: fixed;
   right: 16px;
-  /* 하단 도크(플레이어+내비) 위로 띄운다 */
-  bottom: calc(158px + env(safe-area-inset-bottom));
+  /* 하단 도크(플레이어+내비) 위로 띄운다. --dock-h는 App.vue가 실측(도크 자체
+     safe-area 패딩 포함)해서 채우므로 여기서 env()를 다시 더하지 않는다 */
+  bottom: calc(var(--dock-h, 150px) + 12px);
   z-index: 30;
   display: grid;
   place-items: center;
@@ -289,7 +290,7 @@ async function send() {
 /* 데스크톱: 우하단 플로팅 패널 (하단 도크 위에 얹는다) */
 @media (min-width: 720px) {
   .panel {
-    inset: auto 20px calc(158px + env(safe-area-inset-bottom)) auto;
+    inset: auto 20px calc(var(--dock-h, 150px) + 12px) auto;
     width: 380px;
     height: min(520px, calc(100vh - 200px));
     border-radius: var(--radius);
