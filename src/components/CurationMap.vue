@@ -1,24 +1,51 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { RouterLink } from 'vue-router'
 import { moodById } from '../config/moods'
+import { loadKakaoSdk } from '../lib/kakao'
+import { FALLBACK_LOCATION } from '../config/settings'
 
 const props = defineProps({
   curations: { type: Array, required: true },
 })
 
-// 【플레이스홀더】 유저들이 장소에 곡을 꽂아둔 지도.
-//
-// 카카오맵을 붙일 때:
-//   1) 이 컴포넌트의 .map 요소를 지도 컨테이너로 쓴다
-//   2) curations[].coords(lat/lng)로 kakao.maps.Marker 를 찍고
-//   3) 마커 클릭 시 아래 selected 와 똑같이 말풍선을 띄운다
-//   4) curations[].pin(%) 은 그때 버리면 된다 — 가짜 지도용 좌표라서
 const selected = ref(null)
+const mapEl = ref(null)
+const mapReady = ref(false)
+let map = null
+let markers = []
 
 function toggle(curation) {
   selected.value = selected.value?.id === curation.id ? null : curation
 }
+
+onMounted(async () => {
+  try {
+    await nextTick()
+    const kakao = await loadKakaoSdk()
+    const centerSrc = props.curations?.[0]?.coords ?? FALLBACK_LOCATION
+    const lat = centerSrc.lat ?? centerSrc[0]
+    const lng = centerSrc.lng ?? centerSrc[1]
+    const center = new kakao.maps.LatLng(lat, lng)
+    map = new kakao.maps.Map(mapEl.value, { center, level: 4 })
+    setTimeout(() => { map.relayout(); map.setCenter(center) }, 250)
+
+    props.curations.forEach((c) => {
+      if (!c.coords) return
+      const latc = c.coords.lat ?? c.coords[0]
+      const lngc = c.coords.lng ?? c.coords[1]
+      const pos = new kakao.maps.LatLng(latc, lngc)
+      const marker = new kakao.maps.Marker({ position: pos, map })
+      kakao.maps.event.addListener(marker, 'click', () => { selected.value = c })
+      markers.push(marker)
+    })
+
+    kakao.maps.event.addListener(map, 'click', () => { selected.value = null })
+    mapReady.value = true
+  } catch (err) {
+    console.error('Kakao load failed', err)
+  }
+})
 </script>
 
 <template>
@@ -28,34 +55,15 @@ function toggle(curation) {
         <h2 class="title">음악 지도</h2>
         <p class="sub">사람들이 장소에 꽂아둔 곡 {{ curations.length }}개</p>
       </div>
-      <span class="badge">플레이스홀더</span>
+      <span class="badge">카카오맵</span>
     </header>
 
-    <div class="map" role="img" aria-label="음악 지도 자리 (카카오맵 연동 예정)">
-      <div class="map__grid" aria-hidden="true" />
-
-      <!-- 곡이 꽂힌 핀들 -->
-      <button
-        v-for="c in curations"
-        :key="c.id"
-        class="pin"
-        :class="{ 'pin--on': selected?.id === c.id }"
-        :style="{
-          left: `${c.pin.x}%`,
-          top: `${c.pin.y}%`,
-          '--pin': moodById(c.moodId).color,
-        }"
-        :aria-label="`${c.place} — ${c.track}`"
-        @click="toggle(c)"
-      >
-        <span class="pin__halo" aria-hidden="true" />
-        <span class="pin__note" aria-hidden="true">♪</span>
-      </button>
-
-      <span class="map__note">카카오맵 연동 예정 — 핀을 눌러보세요</span>
+    <div class="map" role="img" aria-label="음악 지도">
+      <div ref="mapEl" style="width:100%;height:100%"></div>
+      <div v-if="!mapReady" class="map__grid" aria-hidden="true" />
+      <div v-if="!mapReady" class="map__note">카카오맵 로딩 중 — 플레이스홀더</div>
     </div>
 
-    <!-- 핀 클릭 시 뜨는 말풍선 (지도가 붙으면 마커 인포윈도우가 된다) -->
     <RouterLink
       v-if="selected"
       :to="`/community/${selected.id}`"

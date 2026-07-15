@@ -1,33 +1,58 @@
 <script setup>
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { LOCATION_SOURCE_LABEL } from '../composables/useGeolocation'
+import { loadKakaoSdk } from '../lib/kakao'
 
-defineProps({
+const props = defineProps({
   location: { type: Object, default: null },
   status: { type: String, required: true },
   error: { type: String, default: '' },
 })
 
 const emit = defineEmits(['relocate'])
+const mapEl = ref(null)
+const mapReady = ref(false)
+let map = null
+let marker = null
+
+async function initMap(loc) {
+  try {
+    const kakao = await loadKakaoSdk()
+    await nextTick()
+    if (!mapEl.value) return
+    const center = new kakao.maps.LatLng(loc.lat, loc.lng)
+    if (!map) {
+      map = new kakao.maps.Map(mapEl.value, { center, level: 4 })
+      setTimeout(() => { map.relayout(); map.setCenter(center) }, 250)
+    } else {
+      map.setCenter(center)
+    }
+    if (!marker) marker = new kakao.maps.Marker({ position: center, map })
+    else marker.setPosition(center)
+    mapReady.value = true
+  } catch (err) {
+    console.error('Kakao init failed', err)
+    mapReady.value = false
+  }
+}
+
+onMounted(() => { if (props.location) initMap(props.location) })
+watch(() => props.location, (loc) => { if (loc) initMap(loc) })
 </script>
 
 <template>
   <section class="card">
     <h2 class="card__title">현재 위치</h2>
 
-    <!--
-      【플레이스홀더】 카카오맵 연동 자리.
-      SDK를 붙일 때 이 .map 요소를 그대로 지도 컨테이너로 쓰면 된다.
-        const map = new kakao.maps.Map(mapEl, { center: new kakao.maps.LatLng(lat, lng), level: 4 })
-      안쪽 .map__stub 만 지우고, 근처 장소는 마커로 얹으면 된다.
-    -->
-    <div class="map" role="img" aria-label="지도 자리 (카카오맵 연동 예정)">
-      <div class="map__grid" aria-hidden="true" />
+    <div class="map" role="img" aria-label="현재 위치 지도">
+      <div ref="mapEl" style="width:100%;height:100%"></div>
 
       <div v-if="status === 'locating'" class="map__stub">
         <div class="skeleton" style="height: 100%; width: 100%; border-radius: 0" />
       </div>
 
-      <div v-else class="map__stub">
+      <div v-else-if="!mapReady" class="map__stub">
+        <div class="map__grid" aria-hidden="true" />
         <span class="map__pin" aria-hidden="true">
           <span class="map__pulse" />
           📍
