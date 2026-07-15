@@ -9,12 +9,13 @@ export function useMood(places) {
   const moodId = ref(DEFAULT_MOOD_ID)
   const mood = computed(() => moodById(moodId.value))
   const moodInfo = ref(null) // { moodId, confidence, reason, decidedBy, note? }
+  const analyzing = ref(false) // LLM 추론 중(player.html의 "무드 분석 중…(LLM)"과 동일)
 
   // src place → 엔진 입력 { title, typeId, dist, type(라벨) }
   function adapt(list) {
     return list.map((p) => ({
       title: p.title,
-      typeId: p.typeId, // 로컬 POI 만 보유(카카오는 undefined → 규칙은 기본 폴백, LLM 은 라벨 사용)
+      typeId: p.typeId,
       dist: p.distanceM,
       type: typeof p.type === 'string' ? p.type : p.type?.label,
     }))
@@ -27,7 +28,9 @@ export function useMood(places) {
     async (list) => {
       if (!list || list.length === 0) return
       const id = ++requestId
+      analyzing.value = true
       const result = await inferMood(adapt(list), kstHour(), import.meta.env.VITE_OPENAI_API_KEY)
+      analyzing.value = false
       if (id !== requestId) return // 더 최신 요청이 있으면 이 결과는 버린다
       moodId.value = result.moodId
       moodInfo.value = result
@@ -42,5 +45,5 @@ export function useMood(places) {
     moodInfo.value = { moodId: id, reason: '직접 선택한 무드', decidedBy: 'manual', confidence: 1 }
   }
 
-  return { moodId, mood, setMood, moods: MOODS, moodInfo }
+  return { moodId, mood, setMood, moods: MOODS, moodInfo, analyzing }
 }

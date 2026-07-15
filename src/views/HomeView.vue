@@ -9,7 +9,14 @@ const app = inject('app')
 </script>
 
 <template>
-  <MoodCard :mood="app.mood.value" :moods="app.moods" @select="app.setMood" />
+  <MoodCard
+    :mood="app.mood.value"
+    :moods="app.moods"
+    :mood-info="app.moodInfo.value"
+    :places="app.places.value"
+    :analyzing="app.analyzing.value"
+    @select="app.setMood"
+  />
 
   <LocationCard
     :location="app.location.value"

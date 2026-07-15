@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, provide, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, onMounted, provide, ref, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import AppNav from './components/AppNav.vue'
 import PlayerBar from './components/PlayerBar.vue'
@@ -17,7 +17,7 @@ const route = useRoute()
 const { location, status, error, locate, mode, demoRoute, demoIndex, gotoStep, nextStep } =
   useGeolocation()
 const { places, usedRadiusM, poiCount, isLoading, loadError } = useNearbyPlaces(location)
-const { moodId, mood, setMood, moods, moodInfo } = useMood(places)
+const { moodId, mood, setMood, moods, moodInfo, analyzing } = useMood(places)
 const player = useCrossfadePlayer(moodId)
 
 // 위치와 데이터 중 하나라도 아직이면 로딩 취급
@@ -46,6 +46,7 @@ provide('app', {
   moods,
   setMood,
   moodInfo,
+  analyzing,
   player,
 })
 
@@ -95,6 +96,9 @@ onMounted(locate)
         v-if="isSheetOpen"
         :player="player"
         :mood="mood"
+        :mood-info="moodInfo"
+        :places="places"
+        :analyzing="analyzing"
         @close="isSheetOpen = false"
       />
     </Transition>

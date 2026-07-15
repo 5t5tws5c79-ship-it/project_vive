@@ -20,13 +20,12 @@ export function kstHour() {
 }
 export function isNight(h) { return h >= 21 || h < 5 }
 
-export function ruleMood(list, hour) {
+export function ruleMood(list) {
   const c = {}
   list.forEach((p) => { const m = TYPE_TO_MOOD[p.typeId] || 'calm'; c[m] = (c[m] || 0) + 1 })
   let best = 'calm', bestN = -1
   for (const m in c) { if (c[m] > bestN) { bestN = c[m]; best = m } }
-  let reason = `근처 ${list.length}곳 중 ${bestN}곳이 '${moodById(best).label}' 성향`
-  if (isNight(hour) && (best === 'calm' || best === 'muse')) { best = 'dreamy'; reason = `야간(${hour}시·KST) 가중 → 몽환` }
+  const reason = `근처 ${list.length}곳 중 ${bestN}곳이 '${moodById(best).label}' 성향`
   return { moodId: best, confidence: list.length ? bestN / list.length : 0, reason, decidedBy: 'rule' }
 }
 
@@ -40,7 +39,7 @@ export async function llmMood(list, hour, key) {
   if (!key) throw new Error('no key')
   const sys = '너는 위치 기반 음악 무드 큐레이터다. 아래는 사용자 현재 위치 주변 장소 목록(가까운 순, 거리 포함)이다. 이 동네에 흐르는 전체 분위기를 판단해 6개 무드 중 가장 어울리는 하나를 골라라. '
     + '무드: calm(고요:잔잔·정적, 사찰·공원·산책), muse(사색:미술관·박물관·고궁), flutter(설렘:축제·공연·핫플), vivid(활기:시장·번화가·쇼핑·레포츠), savory(미식:맛집·카페), dreamy(몽환:밤·야경·해안). '
-    + '가까운 장소일수록 크게 반영. 시간대도 반영(밤 21~5시면 몽환·고요 쪽 고려). reason은 한국어 한 문장.'
+    + '가까운 장소일수록 크게 반영. reason은 한국어 한 문장.'
   const body = {
     model: 'gpt-5-mini',
     messages: [{ role: 'system', content: sys }, { role: 'user', content: promptText(list, hour) }],
@@ -76,14 +75,14 @@ export async function inferMood(list, hour, key) {
     if (cache[sig]) return cache[sig]
     try {
       let r = await llmMood(list, hour, key)
-      if (r.confidence < CONF) r = ruleMood(list, hour)
+      if (r.confidence < CONF) r = ruleMood(list)
       cache[sig] = r
       return r
     } catch (e) {
-      const r = ruleMood(list, hour)
+      const r = ruleMood(list)
       r.note = 'LLM 실패(' + e.message + ')→규칙'
       return r
     }
   }
-  return ruleMood(list, hour)
+  return ruleMood(list)
 }

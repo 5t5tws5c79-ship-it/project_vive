@@ -4,6 +4,9 @@ import { computed } from 'vue'
 const props = defineProps({
   player: { type: Object, required: true },
   mood: { type: Object, required: true },
+  moodInfo: { type: Object, default: null },
+  places: { type: Array, default: () => [] },
+  analyzing: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close'])
@@ -16,6 +19,18 @@ const trackIndex = computed(() => {
   const list = p.playlist.value
   const i = list.findIndex((t) => t.id === p.currentTrack.value?.id)
   return i < 0 ? null : { at: i + 1, of: list.length }
+})
+
+// mood_player/player.html의 .mp-tag/.mp-near/.mp-reason과 동일한 정보를 보여준다.
+const decidedByLabel = computed(() => {
+  const by = props.moodInfo?.decidedBy
+  return by === 'llm' ? 'LLM' : by === 'rule' ? '규칙' : '수동'
+})
+const confidencePct = computed(() => Math.round((props.moodInfo?.confidence || 0) * 100))
+const nearbySummary = computed(() => {
+  if (!props.places.length) return ''
+  const rest = props.places.length - 1
+  return props.places[0].title + (rest > 0 ? ` 외 ${rest}곳` : '')
 })
 </script>
 
@@ -33,7 +48,10 @@ const trackIndex = computed(() => {
         <span v-if="p.isPlaying.value" class="art__ring" />
       </div>
 
-      <p class="now__mood">{{ mood.label }}</p>
+      <p class="now__mood">
+        {{ mood.label }}
+        <span v-if="moodInfo" class="now__badge">{{ decidedByLabel }} {{ confidencePct }}%</span>
+      </p>
       <h2 class="now__title">{{ trackTitle }}</h2>
       <p class="now__sub">
         <template v-if="trackIndex">{{ trackIndex.at }} / {{ trackIndex.of }} · </template>
@@ -41,6 +59,11 @@ const trackIndex = computed(() => {
         <template v-else-if="!p.isUnlocked.value">재생 버튼을 눌러 시작</template>
         <template v-else-if="!p.isPlaying.value">일시정지</template>
         <template v-else>다음 곡까지 {{ p.remainingSec.value }}초</template>
+      </p>
+
+      <p v-if="nearbySummary" class="now__near">근처: {{ nearbySummary }}</p>
+      <p v-if="analyzing || moodInfo?.reason" class="now__reason">
+        {{ analyzing ? '무드 분석 중…(LLM)' : moodInfo.reason }}
       </p>
     </div>
 
@@ -202,11 +225,40 @@ const trackIndex = computed(() => {
 }
 
 .now__mood {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--mood-accent);
+}
+
+.now__badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--text-dim);
+}
+
+.now__near {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.now__reason {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--text-faint);
 }
 
 .now__title {
