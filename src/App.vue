@@ -5,6 +5,7 @@ import AppNav from './components/AppNav.vue'
 import PlayerBar from './components/PlayerBar.vue'
 import NowPlayingSheet from './components/NowPlayingSheet.vue'
 import ChatbotLauncher from './components/ChatbotLauncher.vue'
+import Toast from './components/Toast.vue'
 import { useGeolocation } from './composables/useGeolocation'
 import { useNearbyPlaces } from './composables/useNearbyPlaces'
 import { useMood } from './composables/useMood'
@@ -114,6 +115,8 @@ onMounted(locate)
 
     <!-- 챗봇 진입점: 데스크톱 = 우하단 플로팅 / 모바일 = 전체화면 -->
     <ChatbotLauncher />
+
+    <Toast />
 
     <!-- 하단 고정: 플레이어 + 탭 내비 (페이지를 넘겨도 재생이 끊기지 않는다) -->
     <div ref="dockEl" class="dock">

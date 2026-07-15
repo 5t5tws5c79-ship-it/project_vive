@@ -1,7 +1,8 @@
 <script setup>
 import { computed, inject, onMounted, onBeforeUnmount, ref } from 'vue'
+import { addCuration } from '../lib/communityStore'
+import { showToast } from '../lib/toast'
 
-// 【플레이스홀더】 저장 로직 없음 — 실제로는 여기서 API로 곡-장소-이유를 전송한다.
 // 컨셉: "지금 듣고 있는 곡"을 "지금 있는 장소"에 등록. 곡·장소·무드는 자동 스냅샷, 사용자는 이유만 적는다.
 const emit = defineEmits(['close'])
 
@@ -18,7 +19,16 @@ const canSubmit = computed(() => Boolean(track.value) && reason.value.trim().len
 
 function submit() {
   if (!canSubmit.value) return
-  // TODO: FastAPI POST /spots/{id}/tracks — { track, placeId, moodId, reason, snapshotAt }
+  addCuration({
+    place: nearest.value?.title ?? '현재 위치',
+    placeType: nearest.value?.type?.label ?? '',
+    track: track.value.title,
+    comment: reason.value,
+    moodId: mood.value.id,
+    nickname: '지금 산책 중',
+    coords: nearest.value?.coords ?? null,
+  })
+  showToast('등록되었습니다')
   emit('close')
 }
 
@@ -81,7 +91,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
           </label>
 
           <button class="submit" :disabled="!canSubmit" @click="submit">등록하기</button>
-          <p class="hint">플레이스홀더 — 아직 저장되지 않습니다.</p>
         </template>
       </div>
     </div>

@@ -79,9 +79,9 @@ export const MOODS = [
     accent: '#ffd9a8',
     description: '움직이는 몸, 바람을 가르는 속도. 거리가 환하게 깨어난다.',
     contentTypeIds: [28, 38],
-    tracks: [
-      track('vivid', 1, 'RESCENE (리센느) - LOVE ATTACK (러브어택)', 'audio/vivid/vivid-1.mp3'),
-      track('vivid', 2, 'Take on Me', 'audio/vivid/vivid-2.mp3'),
+    tracks: [track('vivid', 1, 'Take on Me', 'audio/vivid/vivid-1.mp3'),
+      track('vivid', 2, 'RESCENE (리센느) - LOVE ATTACK (러브어택)', 'audio/vivid/vivid-2.mp3'),
+      
     ],
   },
   {
