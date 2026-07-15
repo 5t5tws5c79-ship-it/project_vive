@@ -1,7 +1,4 @@
-# 리포지토리 루트에는 문서만 있고 실제 앱은 frontend/ 안에 있으므로
-# base를 frontend로 잡는다. command와 publish는 base 기준 상대 경로다.
 [build]
-  base = "frontend"
   command = "npm run build"
   publish = "dist"
 
