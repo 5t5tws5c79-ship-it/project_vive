@@ -21,10 +21,10 @@ export const GEOLOCATION_OPTIONS = {
   maximumAge: 60_000,
 }
 
-// 발표용 가상 산책 — 이촌한강공원 → 가좌역 직선을 100초 동안 걷는 것처럼 재생
+// 발표용 가상 산책 — 이촌한강공원 → 북악산 팔각정 직선을 100초 동안 걷는 것처럼 재생
 export const VIRTUAL_WALK = {
   start: { name: '이촌한강공원', lat: 37.518, lng: 126.973 },
-  end: { name: '가좌역', lat: 37.5793, lng: 126.9096 },
+  end: { name: '북악 팔각정', lat: 37.6027, lng: 126.9689 },
   durationMs: 100_000,
   checkpointMs: 20_000, // 이 주기로만 location(=무드 추론 입력)이 갱신됨
 }
