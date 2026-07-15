@@ -83,20 +83,24 @@ onMounted(locate)
       <AppNav />
     </div>
 
-    <NowPlayingSheet
-      v-if="isSheetOpen"
-      :player="player"
-      :mood="mood"
-      @close="isSheetOpen = false"
-    />
+    <Transition name="sheet">
+      <NowPlayingSheet
+        v-if="isSheetOpen"
+        :player="player"
+        :mood="mood"
+        @close="isSheetOpen = false"
+      />
+    </Transition>
   </div>
 </template>
 
 <style scoped>
 .app {
+  /* 본문과 하단 도크가 같은 폭 체계를 쓰도록 셸 최대 폭을 변수로 공유 */
+  --shell-max: 720px;
   position: relative;
   z-index: 1;
-  max-width: 720px;
+  max-width: var(--shell-max);
   margin: 0 auto;
   /* 하단 도크(플레이어+내비)에 가리지 않도록 여백 확보 */
   padding: 28px 16px calc(150px + env(safe-area-inset-bottom));
@@ -157,19 +161,21 @@ onMounted(locate)
   z-index: 20;
   display: grid;
   gap: 0;
-  padding: 0 12px env(safe-area-inset-bottom);
+  /* 본문(.app)과 동일한 좌우 여백 */
+  padding: 0 16px env(safe-area-inset-bottom);
   background: linear-gradient(to top, var(--bg) 72%, transparent);
 }
 
 .dock > * {
-  max-width: 720px;
+  /* 본문 섹션 폭 = 셸 최대 폭 - 좌우 패딩 32px. 도크도 정확히 같은 폭으로 */
+  max-width: calc(var(--shell-max, 720px) - 32px);
   width: 100%;
   margin: 0 auto;
 }
 
 @media (min-width: 860px) {
   .app {
-    max-width: 880px;
+    --shell-max: 880px;
   }
 }
 </style>

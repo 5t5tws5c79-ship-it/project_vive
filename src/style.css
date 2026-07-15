@@ -33,19 +33,6 @@ body {
 
 }
 
-/* 무드 색이 배경에 은은하게 번지게 */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(70% 55% at 15% 0%, color-mix(in srgb, var(--mood) 22%, transparent), transparent 70%),
-    radial-gradient(60% 50% at 95% 100%, color-mix(in srgb, var(--mood) 14%, transparent), transparent 70%);
-  transition: background 1.2s ease;
-  z-index: 0;
-}
-
 button {
   font: inherit;
   cursor: pointer;

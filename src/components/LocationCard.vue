@@ -11,7 +11,7 @@ const emit = defineEmits(['relocate'])
 </script>
 
 <template>
-  <section class="card">
+  <section class="card location">
     <h2 class="card__title">현재 위치</h2>
 
     <!--
@@ -58,13 +58,31 @@ const emit = defineEmits(['relocate'])
 </template>
 
 <style scoped>
+/* 섹션: 검은 테두리 + 흰 배경 + 어두운 글씨 */
+.location {
+  border: 1px solid #0d1014;
+  background: #ffffff;
+  color: #14171b;
+}
+
+.location .card__title {
+  color: rgba(13, 16, 20, 0.62);
+}
+
+/* 기본위치 등 위치 소스 표시: 검은 테두리 + 검은 글씨 + 무드색 배경 */
+.location .badge {
+  border: 1px solid #0d1014;
+  background: var(--mood);
+  color: #0d1014;
+}
+
 .map {
   position: relative;
   aspect-ratio: 16 / 9;
   margin-bottom: 16px;
   border-radius: var(--radius-sm);
-  border: 1px dashed color-mix(in srgb, var(--mood) 40%, var(--border));
-  background: var(--surface-2);
+  border: 1px dashed color-mix(in srgb, var(--mood) 55%, #0d1014);
+  background: #f4f5f7;
   overflow: hidden;
 }
 
@@ -120,7 +138,7 @@ const emit = defineEmits(['relocate'])
 .map__note {
   font-size: 0.75rem;
   letter-spacing: 0.02em;
-  color: var(--text-faint);
+  color: rgba(13, 16, 20, 0.55);
 }
 
 .map__coords {
@@ -129,9 +147,10 @@ const emit = defineEmits(['relocate'])
   bottom: 8px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(13, 16, 20, 0.2);
   font-size: 0.7rem;
-  color: var(--text-dim);
+  color: #14171b;
   font-variant-numeric: tabular-nums;
 }
 
@@ -156,15 +175,19 @@ const emit = defineEmits(['relocate'])
   min-height: 44px;
   padding: 8px 14px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
+  border: 1px solid #0d1014;
+  background: var(--mood);
   font-size: 0.82rem;
-  color: var(--text-dim);
-  transition: border-color 0.2s, color 0.2s;
+  font-weight: 600;
+  color: #0d1014;
+  transition: filter 0.2s, transform 0.12s;
 }
 
 .relocate:hover {
-  border-color: var(--mood);
-  color: var(--text);
+  filter: brightness(1.06);
+}
+
+.relocate:active {
+  transform: scale(0.985);
 }
 </style>

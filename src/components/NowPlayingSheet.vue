@@ -25,9 +25,10 @@ const trackIndex = computed(() => {
 </script>
 
 <template>
-  <div class="scrim" @click="emit('close')" />
+  <div class="layer">
+    <div class="scrim" @click="emit('close')" />
 
-  <section class="sheet" role="dialog" aria-label="재생 중">
+    <section class="sheet" role="dialog" aria-label="재생 중">
     <button class="grip" aria-label="닫기" @click="emit('close')" />
 
     <!-- 재생 중인 곡 -->
@@ -116,7 +117,8 @@ const trackIndex = computed(() => {
       </p>
       <p v-if="p.error.value" class="notice">{{ p.error.value }}</p>
     </div>
-  </section>
+    </section>
+  </div>
 </template>
 
 <style scoped>
@@ -143,13 +145,32 @@ const trackIndex = computed(() => {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--mood) 18%, transparent), transparent 45%),
     var(--surface);
-  animation: rise 0.24s ease-out;
+  /* 등장·퇴장은 App.vue의 <Transition name="sheet">가 담당 (아래 트랜지션 클래스) */
+  will-change: transform;
 }
 
-@keyframes rise {
-  from {
-    transform: translateY(100%);
-  }
+/* ---------- 열림/닫힘 트랜지션 ----------
+   열림: 스크림은 먼저 옅게 깔리고, 패널은 감속 곡선(easeOutQuint 근사)으로 미끄러져 올라온다.
+   닫힘: 패널이 가속 곡선으로 내려가고 스크림이 뒤따라 사라진다. */
+.sheet-enter-active .scrim {
+  transition: opacity 0.3s ease;
+}
+.sheet-enter-active .sheet {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sheet-leave-active .scrim {
+  transition: opacity 0.28s ease 0.05s;
+}
+.sheet-leave-active .sheet {
+  transition: transform 0.32s cubic-bezier(0.4, 0, 1, 1);
+}
+.sheet-enter-from .scrim,
+.sheet-leave-to .scrim {
+  opacity: 0;
+}
+.sheet-enter-from .sheet,
+.sheet-leave-to .sheet {
+  transform: translateY(100%);
 }
 
 .grip {
