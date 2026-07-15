@@ -73,10 +73,10 @@ const list = computed(() => {
 
   <RouterLink
     v-for="c in view === 'list' ? list : []"
-    :key="c.id"
+   :key="c.id"
     :to="`/community/${c.id}`"
     class="card item"
-    :style="{ '--item': moodById(c.moodId).color }"
+    :style="{ '--item': moodById(c.moodId).color, color: '#0d1014' }"
   >
     <div class="item__head">
       <span class="badge">📍 {{ c.place }}</span>
@@ -286,4 +286,36 @@ const list = computed(() => {
   background: color-mix(in srgb, var(--item) 15%, transparent);
   color: inherit;
 }
+.item__head .badge:first-child {
+  background: var(--color-card, #ffffff) !important;
+  color: inherit !important; /* 부모 색을 따르게 함 */
+  border: 1px solid var(--border) !important;
+  box-shadow: none !important;
+  background-image: none !important;
+}
+
+/* Mood chip should keep its mood styling but inherit text color */
+.item__head .badge.badge--mood-chip {
+  background: color-mix(in srgb, var(--item) 15%, transparent) !important;
+  border-color: color-mix(in srgb, var(--item) 45%, transparent) !important;
+  color: inherit !important;
+}
+/* 설명(댓글) 글씨를 어둡게 */
+.item__comment {
+  color: var(--text);
+}
+
+/* footer(날짜 / 좋아요 등) 텍스트를 어둡게 */
+.item__foot {
+  color: var(--text);
+}
+
+/* 작은 요소들이 아직 회색으로 고정되어 있으면 상속 강제 */
+.item__comment,
+.item__foot,
+.item__foot span,
+.item__foot .dot {
+  color: inherit !important;
+}
+
 </style>
