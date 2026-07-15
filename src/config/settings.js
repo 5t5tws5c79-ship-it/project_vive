@@ -5,7 +5,6 @@ export const SETTINGS = {
   radiusExpandSteps: [3000, 8000, 20000, 50000],
   crossfadeIntervalMs: 90_000, // 트랙 전환 주기
   fadeDurationSec: 6, // 크로스페이드 길이
-  audioSource: 'ambient', // 'ambient' | 'youtube'
 }
 
 // 위치 권한 거부·타임아웃·비보안 컨텍스트 폴백 (서울시청)

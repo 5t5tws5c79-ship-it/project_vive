@@ -20,13 +20,12 @@ const tracks = computed(() => moodTracks(props.mood.id))
   <section class="card mood">
     <header class="head">
       <h2 class="card__title">지금의 무드</h2>
-      <span class="badge">플레이스홀더</span>
     </header>
 
     <h3 class="label">{{ mood.label }}</h3>
     <p class="desc">{{ mood.description }}</p>
 
-    <!-- 추론 로직이 붙기 전까지는 직접 골라서 화면 전환을 확인한다 -->
+    <!-- 자동 추론된 무드. 직접 눌러서 다른 무드로 바꿀 수도 있다 -->
     <div class="picker" role="radiogroup" aria-label="무드 선택">
       <button
         v-for="m in moods"

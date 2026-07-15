@@ -10,11 +10,6 @@ const emit = defineEmits(['close'])
 
 const p = props.player
 
-const SOURCES = [
-  { id: 'ambient', label: '생성 앰비언트' },
-  { id: 'youtube', label: '유튜브' },
-]
-
 const trackTitle = computed(() => p.currentTrack.value?.title ?? '재생 대기 중')
 
 const trackIndex = computed(() => {
@@ -95,26 +90,6 @@ const trackIndex = computed(() => {
         <input v-model.number="p.volume.value" type="range" min="0" max="1" step="0.01" />
       </label>
 
-      <div class="row">
-        <span class="row__label">음원</span>
-        <div class="sources" role="radiogroup" aria-label="오디오 소스">
-          <button
-            v-for="opt in SOURCES"
-            :key="opt.id"
-            role="radio"
-            :aria-checked="p.source.value === opt.id"
-            class="source"
-            :class="{ 'source--on': p.source.value === opt.id }"
-            @click="p.source.value = opt.id"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
-
-      <p class="hint">
-        유튜브 모드는 무드별 영상 ID가 채워지면 동작합니다. 지금은 생성 앰비언트만 소리가 납니다.
-      </p>
       <p v-if="p.error.value" class="notice">{{ p.error.value }}</p>
     </div>
     </section>
@@ -351,36 +326,5 @@ const trackIndex = computed(() => {
 .row input[type='range'] {
   flex: 1;
   accent-color: var(--mood);
-}
-
-.sources {
-  display: flex;
-  gap: 6px;
-}
-
-.source {
-  min-height: 36px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid #0d1014;
-  background: #ffffff;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  transition: all 0.2s;
-}
-
-/* 활성 음원: 검은 테두리 + 검은 글씨 + 무드색 배경 (액션 버튼 문법) */
-.source--on {
-  border-color: #0d1014;
-  background: var(--mood);
-  color: #0d1014;
-  font-weight: 600;
-}
-
-.hint {
-  margin: 12px 0 0;
-  font-size: 0.72rem;
-  line-height: 1.6;
-  color: var(--text-faint);
 }
 </style>

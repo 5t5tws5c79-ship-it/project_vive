@@ -7,16 +7,16 @@ import NowPlayingSheet from './components/NowPlayingSheet.vue'
 import ChatbotLauncher from './components/ChatbotLauncher.vue'
 import { useGeolocation } from './composables/useGeolocation'
 import { useNearbyPlaces } from './composables/useNearbyPlaces'
-import { useMoodPlaceholder } from './composables/useMoodPlaceholder'
+import { useMood } from './composables/useMood'
 import { useCrossfadePlayer } from './composables/useCrossfadePlayer'
 import { ATTRIBUTION, REGION } from './config/dataset'
 
 const route = useRoute()
 
-// 위치 → 근처 장소 → (무드: 플레이스홀더) → 플레이어
+// 위치 → 근처 장소 → 무드 추론(LLM 주 + 규칙 폴백) → 플레이어
 const { location, status, error, locate } = useGeolocation()
 const { places, usedRadiusM, poiCount, isLoading, loadError } = useNearbyPlaces(location)
-const { moodId, mood, setMood, moods } = useMoodPlaceholder()
+const { moodId, mood, setMood, moods, moodInfo } = useMood(places)
 const player = useCrossfadePlayer(moodId)
 
 // 위치와 데이터 중 하나라도 아직이면 로딩 취급
@@ -39,6 +39,7 @@ provide('app', {
   mood,
   moods,
   setMood,
+  moodInfo,
   player,
 })
 

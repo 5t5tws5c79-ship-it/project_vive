@@ -20,6 +20,7 @@ export async function loadPois() {
         addr: it.addr1 || '',
         coords: [Number(it.mapy), Number(it.mapx)], // [lat, lon]
         type: contentType(it.contenttypeid),
+        typeId: Number(it.contenttypeid), // 무드 규칙 폴백·프롬프트용 (카카오 경로엔 없음)
         raw: it,
       }));
   });
