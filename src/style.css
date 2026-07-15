@@ -15,7 +15,7 @@
   --radius-sm: 9px;
 
   color-scheme: dark;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --app-font-stack: "Paperlogy", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -29,6 +29,8 @@ body {
   background: var(--bg);
   color: var(--text);
   transition: background 1.2s ease;
+  font-family: var(--app-font-stack);
+
 }
 
 /* 무드 색이 배경에 은은하게 번지게 */
