@@ -25,6 +25,7 @@ const app = inject('app')
     :mode="app.mode.value"
     :demo-route="app.demoRoute"
     :demo-index="app.demoIndex.value"
+    :places="app.places.value"
     @relocate="app.locate"
     @goto-demo="app.gotoStep"
     @next-step="app.nextStep"
