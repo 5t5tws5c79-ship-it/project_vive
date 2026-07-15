@@ -61,7 +61,9 @@ const isModalOpen = ref(false)
   justify-content: space-between;
   gap: 10px;
 }
-
+.head .card__title {
+  color: #0d1014;
+}
 .pitch {
   margin: 0 0 14px;
   font-size: 0.85rem;
@@ -97,7 +99,7 @@ const isModalOpen = ref(false)
 .target__label {
   margin: 0;
   font-size: 0.68rem;
-  color: var(--text-faint);
+  color: #0d1014;
 }
 
 .target__place {
@@ -115,6 +117,7 @@ const isModalOpen = ref(false)
   width: 100%;
   min-height: 50px;
   border-radius: var(--radius-sm);
+  border: 1px solid #0d1014;
   background: var(--mood);
   color: #0d1014;
   text-decoration: none;

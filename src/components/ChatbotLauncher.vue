@@ -74,7 +74,15 @@ const isOpen = ref(false)
   z-index: 40;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  color: var(--panel-text);
+  --text: var(--panel-text);
+  --text-dim: var(--panel-text-dim);
+  --text-faint: var(--panel-text-faint);
+  --surface-2: var(--panel-surface-2);
+  --mood-accent: var(--panel-mood-accent);
+  --border: #0d1014;
   border: 1px solid var(--border);
 
   /* 모바일: 전체화면 */

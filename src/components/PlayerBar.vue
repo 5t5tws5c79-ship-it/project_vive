@@ -90,11 +90,18 @@ const progressPct = computed(() =>
 <style scoped>
 .player {
   position: relative;
-  border: 1px solid var(--border);
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  backdrop-filter: blur(10px);
+  /* 무드 섹션과 동일: 배경 = 현재 무드색 */
+  background: var(--mood);
   padding: 10px 16px 14px;
+  color: var(--panel-text);
+  --text: var(--panel-text);
+  --text-dim: var(--panel-text-dim);
+  --text-faint: var(--panel-text-faint);
+  --surface-2: var(--panel-surface-2);
+  --mood-accent: var(--panel-mood-accent);
+  --border: #0d1014;
 }
 
 .now {
@@ -108,7 +115,7 @@ const progressPct = computed(() =>
 }
 
 .now:hover {
-  background: var(--surface-2);
+  background: rgba(255, 255, 255, 0.4);
 }
 
 .track {
@@ -194,6 +201,8 @@ const progressPct = computed(() =>
   width: 44px;
   height: 44px;
   border-radius: 50%;
+  border: 1px solid #0d1014;
+  background: #ffffff;
 }
 
 .ctrl svg,
@@ -220,7 +229,8 @@ const progressPct = computed(() =>
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  border: 1.5px solid var(--text);
+  border: 1.5px solid #0d1014;
+  background: #ffffff;
 }
 
 .play svg {

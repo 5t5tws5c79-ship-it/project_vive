@@ -66,7 +66,7 @@ const emit = defineEmits(['relocate'])
 }
 
 .location .card__title {
-  color: rgba(13, 16, 20, 0.62);
+  color: #0d1014;
 }
 
 /* 기본위치 등 위치 소스 표시: 검은 테두리 + 검은 글씨 + 무드색 배경 */

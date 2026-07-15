@@ -269,16 +269,21 @@ const list = computed(() => {
   width: 100%;
   min-height: 50px;
   border-radius: var(--radius);
-  border: 1px dashed color-mix(in srgb, var(--mood) 45%, var(--border));
-  background: color-mix(in srgb, var(--mood) 8%, transparent);
+  border: 1px solid #0d1014;
+  background: var(--mood);
   text-decoration: none;
   font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--mood-accent);
+  font-weight: 600;
+  color: #0d1014;
+  transition: filter 0.2s, transform 0.12s;
 }
 
 .write:hover {
-  background: color-mix(in srgb, var(--mood) 15%, transparent);
+  filter: brightness(1.06);
+}
+
+.write:active {
+  transform: scale(0.985);
 }
 @media (hover: none) {
   .item:active {

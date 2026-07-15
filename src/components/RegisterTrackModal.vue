@@ -107,8 +107,15 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
   overflow-y: auto;
   padding: 20px;
   border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--surface);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--panel-text);
+  --text: var(--panel-text);
+  --text-dim: var(--panel-text-dim);
+  --text-faint: var(--panel-text-faint);
+  --surface-2: var(--panel-surface-2);
+  --mood-accent: var(--panel-mood-accent);
+  --border: #0d1014;
 }
 
 .head {

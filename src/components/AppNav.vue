@@ -22,11 +22,16 @@ const TABS = [
 </template>
 
 <style scoped>
+/* 섹션들과 같은 체계: 검은 테두리 + 흰 배경 + 검은 글씨 */
 .nav {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
-  padding: 6px 0 10px;
+  margin: 8px 0 10px;
+  padding: 5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
 }
 
 .tab {
@@ -37,19 +42,22 @@ const TABS = [
   min-height: 48px;
   padding: 6px;
   border-radius: var(--radius-sm);
+  border: 1px solid transparent;
   text-decoration: none;
-  color: var(--text-faint);
-  transition: color 0.2s, background 0.2s;
+  color: var(--panel-text-faint);
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
 }
 
 .tab:hover {
-  color: var(--text-dim);
+  color: var(--panel-text);
 }
 
+/* 활성 탭: 검은 테두리 + 검은 글씨 + 무드색 배경 (액션 버튼 문법과 동일) */
 .tab.router-link-active:not(.tab--exact),
 .tab--exact.router-link-exact-active {
-  color: var(--mood-accent);
-  background: color-mix(in srgb, var(--mood) 12%, transparent);
+  color: #0d1014;
+  background: var(--mood);
+  border-color: #0d1014;
 }
 
 .tab__icon {

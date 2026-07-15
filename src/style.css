@@ -46,13 +46,34 @@ button:disabled {
   opacity: 0.45;
 }
 
+/* ---------- 라이트 패널 공통 토큰 ----------
+   섹션·시트·모달이 공유하는 색 체계: 검은 테두리 + 흰 배경 + 검은 글씨.
+   컨테이너 안에서 텍스트/서브배경 토큰을 재정의해 내부 요소가 자동으로 따라온다. */
+:root {
+  --panel-bg: #ffffff;
+  --panel-border: #0d1014;
+  --panel-text: #14171b;
+  --panel-text-dim: rgba(13, 16, 20, 0.72);
+  --panel-text-faint: rgba(13, 16, 20, 0.55);
+  --panel-surface-2: #f4f5f7;
+  /* 옅은 무드 액센트는 흰 바탕에서 안 읽히므로 어둡게 파생 */
+  --panel-mood-accent: color-mix(in srgb, var(--mood) 62%, #17181c);
+}
+
 .card {
   position: relative;
-  background: color-mix(in srgb, var(--surface) 88%, transparent);
-  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
   border-radius: var(--radius);
   padding: 20px;
-  backdrop-filter: blur(8px);
+  color: var(--panel-text);
+  --text: var(--panel-text);
+  --text-dim: var(--panel-text-dim);
+  --text-faint: var(--panel-text-faint);
+  --surface: #ffffff;
+  --surface-2: var(--panel-surface-2);
+  --border: #0d1014;
+  --mood-accent: var(--panel-mood-accent);
 }
 
 .card__title {
@@ -87,16 +108,16 @@ button:disabled {
   margin-top: 12px;
   padding: 9px 12px;
   border-radius: var(--radius-sm);
-  border: 1px solid #4d3b1f;
-  background: #2a2113;
+  border: 1px solid rgba(180, 110, 20, 0.45);
+  background: #fff6e4;
   font-size: 0.8rem;
   line-height: 1.5;
-  color: #e6c78a;
+  color: #8a5a12;
 }
 
 .skeleton {
   border-radius: var(--radius-sm);
-  background: linear-gradient(90deg, var(--surface-2) 25%, #263041 50%, var(--surface-2) 75%);
+  background: linear-gradient(90deg, var(--surface-2) 25%, color-mix(in srgb, var(--surface-2) 55%, #8a93a0) 50%, var(--surface-2) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }

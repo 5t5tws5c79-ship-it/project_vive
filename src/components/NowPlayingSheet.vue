@@ -140,11 +140,18 @@ const trackIndex = computed(() => {
   margin: 0 auto;
   padding: 8px 20px calc(24px + env(safe-area-inset-bottom));
   border-radius: 20px 20px 0 0;
-  border: 1px solid var(--border);
+  border: 1px solid var(--panel-border);
   border-bottom: none;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--mood) 18%, transparent), transparent 45%),
-    var(--surface);
+    var(--panel-bg);
+  color: var(--panel-text);
+  --text: var(--panel-text);
+  --text-dim: var(--panel-text-dim);
+  --text-faint: var(--panel-text-faint);
+  --surface-2: var(--panel-surface-2);
+  --mood-accent: var(--panel-mood-accent);
+  --border: #0d1014;
   /* 등장·퇴장은 App.vue의 <Transition name="sheet">가 담당 (아래 트랜지션 클래스) */
   will-change: transform;
 }
@@ -286,6 +293,8 @@ const trackIndex = computed(() => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
+  border: 1px solid #0d1014;
+  background: #ffffff;
 }
 
 .ctrl svg {
@@ -306,7 +315,7 @@ const trackIndex = computed(() => {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  border: 1.5px solid var(--text);
+  border: 1.5px solid #0d1014;
   transition: transform 0.15s;
 }
 
@@ -353,16 +362,19 @@ const trackIndex = computed(() => {
   min-height: 36px;
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1px solid #0d1014;
+  background: #ffffff;
   font-size: 0.78rem;
-  color: var(--text-faint);
+  color: var(--text-dim);
   transition: all 0.2s;
 }
 
+/* 활성 음원: 검은 테두리 + 검은 글씨 + 무드색 배경 (액션 버튼 문법) */
 .source--on {
-  border-color: color-mix(in srgb, var(--mood) 55%, transparent);
-  background: color-mix(in srgb, var(--mood) 18%, transparent);
-  color: var(--mood-accent);
+  border-color: #0d1014;
+  background: var(--mood);
+  color: #0d1014;
+  font-weight: 600;
 }
 
 .hint {
