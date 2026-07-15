@@ -1,19 +1,23 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { curationById } from '../data/placeholder'
+import { curationById, toggleLike, addComment } from '../lib/communityStore'
 import { moodById } from '../config/moods'
 
 const route = useRoute()
 const curation = computed(() => curationById(route.params.id))
 const mood = computed(() => (curation.value ? moodById(curation.value.moodId) : null))
 
-// 좋아요 상태 (플레이스홀더 — 백엔드 연동 전, 화면 내 토글만)
-const liked = ref(false)
-const likeCount = computed(() => (curation.value?.likes ?? 0) + (liked.value ? 1 : 0))
+function onToggleLike() {
+  toggleLike(curation.value.id)
+}
 
-function toggleLike() {
-  liked.value = !liked.value
+const commentText = ref('')
+
+function submitComment() {
+  if (!commentText.value.trim()) return
+  addComment(curation.value.id, commentText.value)
+  commentText.value = ''
 }
 </script>
 
@@ -50,13 +54,13 @@ function toggleLike() {
       <div class="actions">
         <button
           class="action like"
-          :class="{ 'like--on': liked }"
-          :aria-pressed="liked"
-          @click="toggleLike"
+          :class="{ 'like--on': curation.likedByMe }"
+          :aria-pressed="curation.likedByMe"
+          @click="onToggleLike"
         >
           <span class="like__heart" aria-hidden="true">♥</span>
           <span class="like__label">좋아요</span>
-          <span class="like__count">{{ likeCount }}</span>
+          <span class="like__count">{{ curation.likes }}</span>
         </button>
       </div>
 
@@ -70,11 +74,17 @@ function toggleLike() {
     </article>
 
     <section class="card">
-      <h2 class="card__title">댓글 {{ curation.replies }}</h2>
-      <p class="empty-inline">댓글 목록이 여기 표시됩니다.</p>
-      <form class="reply" @submit.prevent>
-        <input class="reply__input" placeholder="댓글 입력 — 연동 예정" disabled />
-        <button class="reply__send" type="submit" disabled>등록</button>
+      <h2 class="card__title">댓글 {{ curation.comments.length }}</h2>
+      <p v-if="!curation.comments.length" class="empty-inline">아직 댓글이 없습니다.</p>
+      <ul v-else class="comments">
+        <li v-for="c in curation.comments" :key="c.id" class="comment-item">
+          <p class="comment-item__text">{{ c.text }}</p>
+          <p class="comment-item__meta">{{ c.createdAt }}</p>
+        </li>
+      </ul>
+      <form class="reply" @submit.prevent="submitComment">
+        <input v-model="commentText" class="reply__input" placeholder="댓글을 입력하세요" />
+        <button class="reply__send" type="submit">등록</button>
       </form>
     </section>
   </template>
@@ -376,6 +386,33 @@ function toggleLike() {
   padding: 20px 0;
   text-align: center;
   font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+.comments {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.comment-item {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.comment-item__text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.comment-item__meta {
+  margin: 4px 0 0;
+  font-size: 0.68rem;
   color: var(--text-faint);
 }
 

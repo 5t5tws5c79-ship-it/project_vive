@@ -4,16 +4,14 @@ import { computed } from 'vue'
 const props = defineProps({
   player: { type: Object, required: true },
   mood: { type: Object, required: true },
+  moodInfo: { type: Object, default: null },
+  places: { type: Array, default: () => [] },
+  analyzing: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['close'])
 
 const p = props.player
-
-const SOURCES = [
-  { id: 'ambient', label: '생성 앰비언트' },
-  { id: 'youtube', label: '유튜브' },
-]
 
 const trackTitle = computed(() => p.currentTrack.value?.title ?? '재생 대기 중')
 
@@ -21,6 +19,18 @@ const trackIndex = computed(() => {
   const list = p.playlist.value
   const i = list.findIndex((t) => t.id === p.currentTrack.value?.id)
   return i < 0 ? null : { at: i + 1, of: list.length }
+})
+
+// mood_player/player.html의 .mp-tag/.mp-near/.mp-reason과 동일한 정보를 보여준다.
+const decidedByLabel = computed(() => {
+  const by = props.moodInfo?.decidedBy
+  return by === 'llm' ? 'LLM' : by === 'rule' ? '규칙' : '수동'
+})
+const confidencePct = computed(() => Math.round((props.moodInfo?.confidence || 0) * 100))
+const nearbySummary = computed(() => {
+  if (!props.places.length) return ''
+  const rest = props.places.length - 1
+  return props.places[0].title + (rest > 0 ? ` 외 ${rest}곳` : '')
 })
 </script>
 
@@ -38,7 +48,10 @@ const trackIndex = computed(() => {
         <span v-if="p.isPlaying.value" class="art__ring" />
       </div>
 
-      <p class="now__mood">{{ mood.label }}</p>
+      <p class="now__mood">
+        {{ mood.label }}
+        <span v-if="moodInfo" class="now__badge">{{ decidedByLabel }} {{ confidencePct }}%</span>
+      </p>
       <h2 class="now__title">{{ trackTitle }}</h2>
       <p class="now__sub">
         <template v-if="trackIndex">{{ trackIndex.at }} / {{ trackIndex.of }} · </template>
@@ -46,6 +59,11 @@ const trackIndex = computed(() => {
         <template v-else-if="!p.isUnlocked.value">재생 버튼을 눌러 시작</template>
         <template v-else-if="!p.isPlaying.value">일시정지</template>
         <template v-else>다음 곡까지 {{ p.remainingSec.value }}초</template>
+      </p>
+
+      <p v-if="nearbySummary" class="now__near">근처: {{ nearbySummary }}</p>
+      <p v-if="analyzing || moodInfo?.reason" class="now__reason">
+        {{ analyzing ? '무드 분석 중…(LLM)' : moodInfo.reason }}
       </p>
     </div>
 
@@ -95,26 +113,6 @@ const trackIndex = computed(() => {
         <input v-model.number="p.volume.value" type="range" min="0" max="1" step="0.01" />
       </label>
 
-      <div class="row">
-        <span class="row__label">음원</span>
-        <div class="sources" role="radiogroup" aria-label="오디오 소스">
-          <button
-            v-for="opt in SOURCES"
-            :key="opt.id"
-            role="radio"
-            :aria-checked="p.source.value === opt.id"
-            class="source"
-            :class="{ 'source--on': p.source.value === opt.id }"
-            @click="p.source.value = opt.id"
-          >
-            {{ opt.label }}
-          </button>
-        </div>
-      </div>
-
-      <p class="hint">
-        유튜브 모드는 무드별 영상 ID가 채워지면 동작합니다. 지금은 생성 앰비언트만 소리가 납니다.
-      </p>
       <p v-if="p.error.value" class="notice">{{ p.error.value }}</p>
     </div>
     </section>
@@ -227,11 +225,40 @@ const trackIndex = computed(() => {
 }
 
 .now__mood {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--mood-accent);
+}
+
+.now__badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: normal;
+  color: var(--text-dim);
+}
+
+.now__near {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.now__reason {
+  margin: 4px 0 0;
+  font-size: 0.74rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--text-faint);
 }
 
 .now__title {
@@ -351,36 +378,5 @@ const trackIndex = computed(() => {
 .row input[type='range'] {
   flex: 1;
   accent-color: var(--mood);
-}
-
-.sources {
-  display: flex;
-  gap: 6px;
-}
-
-.source {
-  min-height: 36px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid #0d1014;
-  background: #ffffff;
-  font-size: 0.78rem;
-  color: var(--text-dim);
-  transition: all 0.2s;
-}
-
-/* 활성 음원: 검은 테두리 + 검은 글씨 + 무드색 배경 (액션 버튼 문법) */
-.source--on {
-  border-color: #0d1014;
-  background: var(--mood);
-  color: #0d1014;
-  font-weight: 600;
-}
-
-.hint {
-  margin: 12px 0 0;
-  font-size: 0.72rem;
-  line-height: 1.6;
-  color: var(--text-faint);
 }
 </style>

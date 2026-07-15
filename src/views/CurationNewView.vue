@@ -2,9 +2,9 @@
 import { inject, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { MOODS } from '../config/moods'
+import { addCuration } from '../lib/communityStore'
+import { showToast } from '../lib/toast'
 
-// 【플레이스홀더】 저장 로직 없음. 제출하면 목록으로 되돌아가기만 한다.
-// 실제로는 여기서 localStorage에 글을 저장하고, 비밀번호도 함께 보관한다.
 const app = inject('app')
 const router = useRouter()
 
@@ -18,7 +18,10 @@ const form = ref({
 })
 
 function submit() {
-  router.push('/community')
+  if (!form.value.place.trim() || !form.value.track.trim()) return
+  const entry = addCuration({ ...form.value, nickname: '익명의 산책자' })
+  showToast('등록되었습니다')
+  router.push(`/community/${entry.id}`)
 }
 </script>
 
@@ -28,7 +31,6 @@ function submit() {
   <form class="card" @submit.prevent="submit">
     <header class="head">
       <h2 class="title">이 장소의 곡 등록</h2>
-      <span class="badge">플레이스홀더</span>
     </header>
 
     <label class="field">
@@ -89,7 +91,6 @@ function submit() {
     </label>
 
     <button class="submit" type="submit">등록하기</button>
-    <p class="hint">아직 저장되지 않습니다. 제출하면 목록으로 돌아갑니다.</p>
   </form>
 </template>
 

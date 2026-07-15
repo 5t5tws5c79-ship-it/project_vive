@@ -3,10 +3,9 @@ import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import CurationMap from '../components/CurationMap.vue'
 import RegisterTrackModal from '../components/RegisterTrackModal.vue'
-import { CURATIONS } from '../data/placeholder'
+import { curations } from '../lib/communityStore'
 import { moodById } from '../config/moods'
 
-// 【플레이스홀더】 실제로는 localStorage에서 읽어온다.
 const SORTS = [
   { id: 'recent', label: '최신순' },
   { id: 'popular', label: '인기순' },
@@ -20,8 +19,8 @@ const isRegisterOpen = ref(false)
 
 const list = computed(() => {
   const q = query.value.trim()
-  if (!q) return CURATIONS
-  return CURATIONS.filter((c) => c.place.includes(q) || c.track.includes(q))
+  if (!q) return curations.value
+  return curations.value.filter((c) => c.place.includes(q) || c.track.includes(q))
 })
 </script>
 
@@ -32,7 +31,6 @@ const list = computed(() => {
         <h2 class="title">장소별 큐레이션</h2>
         <p class="sub">다른 사람들이 그 장소에서 들은 곡</p>
       </div>
-      <span class="badge">플레이스홀더</span>
     </header>
 
     <input v-model="query" class="search" placeholder="장소나 곡 이름으로 검색" />

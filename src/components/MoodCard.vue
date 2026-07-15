@@ -5,6 +5,9 @@ import { moodTracks } from '../data/placeholder'
 const props = defineProps({
   mood: { type: Object, required: true },
   moods: { type: Array, required: true },
+  moodInfo: { type: Object, default: null },
+  places: { type: Array, default: () => [] },
+  analyzing: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['select'])
@@ -14,19 +17,36 @@ const isOpen = ref(false)
 // 【플레이스홀더】 실제로는 이 무드로 등록된 커뮤니티 글에서 곡을 모아온다.
 // mood가 바뀌면 리스트도 자동으로 새 무드 것으로 바뀐다.
 const tracks = computed(() => moodTracks(props.mood.id))
+
+// mood_player/player.html의 .mp-tag/.mp-near/.mp-reason과 동일한 정보를 보여준다.
+const decidedByLabel = computed(() => {
+  const by = props.moodInfo?.decidedBy
+  return by === 'llm' ? 'LLM' : by === 'rule' ? '규칙' : '수동'
+})
+const confidencePct = computed(() => Math.round((props.moodInfo?.confidence || 0) * 100))
+const nearbySummary = computed(() => {
+  if (!props.places.length) return ''
+  const rest = props.places.length - 1
+  return props.places[0].title + (rest > 0 ? ` 외 ${rest}곳` : '')
+})
 </script>
 
 <template>
   <section class="card mood">
     <header class="head">
       <h2 class="card__title">지금의 무드</h2>
-      <span class="badge">플레이스홀더</span>
+      <span v-if="moodInfo" class="badge">{{ decidedByLabel }} {{ confidencePct }}%</span>
     </header>
 
     <h3 class="label">{{ mood.label }}</h3>
     <p class="desc">{{ mood.description }}</p>
 
-    <!-- 추론 로직이 붙기 전까지는 직접 골라서 화면 전환을 확인한다 -->
+    <p v-if="nearbySummary" class="near">근처: {{ nearbySummary }}</p>
+    <p v-if="analyzing || moodInfo?.reason" class="reason">
+      {{ analyzing ? '무드 분석 중…(LLM)' : moodInfo.reason }}
+    </p>
+
+    <!-- 자동 추론된 무드. 직접 눌러서 다른 무드로 바꿀 수도 있다 -->
     <div class="picker" role="radiogroup" aria-label="무드 선택">
       <button
         v-for="m in moods"
@@ -117,6 +137,20 @@ const tracks = computed(() => moodTracks(props.mood.id))
   font-size: 0.95rem;
   line-height: 1.6;
   color: rgba(13, 16, 20, 0.72);
+}
+
+.near {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  color: rgba(13, 16, 20, 0.7);
+}
+
+.reason {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.5;
+  color: rgba(13, 16, 20, 0.55);
 }
 
 .picker {

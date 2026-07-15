@@ -11,9 +11,6 @@
 
 export const REGION = '서울'
 
-// 숙박(32)은 대응하는 무드가 없어 제외했다.
-// 음식점(39)은 서울 데이터셋에 파일 자체가 없다 → '미식' 무드는 발동하지 않는다.
-// 파일을 받으면 아래 주석을 풀기만 하면 된다.
 export const FILES = [
   { path: 'data/seoul-12-attraction.json', contentTypeId: 12 },
   { path: 'data/seoul-14-culture.json', contentTypeId: 14 },
@@ -21,7 +18,7 @@ export const FILES = [
   { path: 'data/seoul-25-course.json', contentTypeId: 25 },
   { path: 'data/seoul-28-leisure.json', contentTypeId: 28 },
   { path: 'data/seoul-38-shopping.json', contentTypeId: 38 },
-  // { path: 'data/seoul-39-restaurant.json', contentTypeId: 39 },
+  
 ]
 
 // 공공누리 3유형은 출처 표시가 의무다. 화면에 반드시 노출할 것.

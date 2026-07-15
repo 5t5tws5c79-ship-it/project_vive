@@ -9,13 +9,26 @@ const app = inject('app')
 </script>
 
 <template>
-  <MoodCard :mood="app.mood.value" :moods="app.moods" @select="app.setMood" />
+  <MoodCard
+    :mood="app.mood.value"
+    :moods="app.moods"
+    :mood-info="app.moodInfo.value"
+    :places="app.places.value"
+    :analyzing="app.analyzing.value"
+    @select="app.setMood"
+  />
 
   <LocationCard
     :location="app.location.value"
     :status="app.status.value"
     :error="app.error.value"
+    :mode="app.mode.value"
+    :walk-position="app.walkPosition.value"
+    :walk-elapsed-ms="app.walkElapsedMs.value"
+    :is-walking="app.isWalking.value"
+    :places="app.places.value"
     @relocate="app.locate"
+    @start-walk="app.startVirtualWalk"
   />
 
   <ContributeTrack :places="app.places.value" :mood-label="app.mood.value.label" />

@@ -100,8 +100,6 @@ VITE_OPENAI_API_KEY=sk-...
 
 `netlify.toml`에 빌드 명령(Node 22)과 SPA 리다이렉트(`/* → /index.html`)가 설정되어 있습니다. repo 연동 후 push하면 자동 배포됩니다.
 
-> **주의**: `netlify.toml`의 `base = "frontend"`는 앱이 리포지토리의 `frontend/` 하위에 있다는 전제입니다. 앱이 리포 루트에 있는 구조라면 해당 줄을 제거하세요.
-
 ## 프로젝트 구조
 
 ```
