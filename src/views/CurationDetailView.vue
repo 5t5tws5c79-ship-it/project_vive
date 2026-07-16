@@ -1,23 +1,87 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
-import { curationById, toggleLike, addComment } from '../lib/communityStore'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
+import {
+  curationById,
+  toggleLike,
+  addComment,
+  verifyPassword,
+  updateCuration,
+  deleteCuration,
+} from '../lib/communityStore'
 import { moodById } from '../config/moods'
+import { showToast } from '../lib/toast'
 
 const route = useRoute()
+const router = useRouter()
 const curation = computed(() => curationById(route.params.id))
 const mood = computed(() => (curation.value ? moodById(curation.value.moodId) : null))
 
 function onToggleLike() {
+  if (!curation.value) return
   toggleLike(curation.value.id)
 }
 
 const commentText = ref('')
 
 function submitComment() {
-  if (!commentText.value.trim()) return
+  if (!commentText.value.trim() || !curation.value) return
   addComment(curation.value.id, commentText.value)
   commentText.value = ''
+}
+
+// 소유자(비밀번호) 검증 · 수정 · 삭제 상태
+const password = ref('')
+const pwError = ref('')
+const isEditing = ref(false)
+const editForm = ref({ track: '', artist: '', comment: '' })
+
+function onEdit() {
+  pwError.value = ''
+  if (!curation.value) return
+  if (!verifyPassword(curation.value.id, password.value)) {
+    pwError.value = '비밀번호가 일치하지 않습니다.'
+    return
+  }
+  editForm.value = {
+    track: curation.value.track || '',
+    artist: curation.value.artist || '',
+    comment: curation.value.comment || '',
+  }
+  isEditing.value = true
+}
+
+function saveEdit() {
+  if (!curation.value) return
+  const ok = updateCuration(curation.value.id, password.value, editForm.value)
+  if (ok) {
+    isEditing.value = false
+    showToast('수정되었습니다')
+  } else {
+    pwError.value = '수정에 실패했습니다.'
+  }
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  pwError.value = ''
+}
+
+function onDelete() {
+  pwError.value = ''
+  if (!curation.value) return
+  if (!verifyPassword(curation.value.id, password.value)) {
+    pwError.value = '비밀번호가 일치하지 않습니다.'
+    return
+  }
+  if (!confirm('정말 삭제하시겠습니까?')) return
+  const ok = deleteCuration(curation.value.id, password.value)
+  if (ok) {
+    showToast('삭제되었습니다')
+    router.push('/community')
+  } else {
+    pwError.value = '삭제에 실패했습니다.'
+  }
 }
 </script>
 
@@ -37,13 +101,24 @@ function submitComment() {
       <div class="track">
         <span class="track__art" aria-hidden="true">♪</span>
         <div>
-          <p class="track__title">{{ curation.track }}</p>
-          <p class="track__artist">{{ curation.artist }}</p>
+          <template v-if="isEditing">
+            <input v-model="editForm.track" class="track__title" />
+            <input v-model="editForm.artist" class="track__artist" />
+          </template>
+          <template v-else>
+            <p class="track__title">{{ curation.track }}</p>
+            <p class="track__artist">{{ curation.artist }}</p>
+          </template>
         </div>
         <button class="track__play" aria-label="재생">▶</button>
       </div>
 
-      <p class="comment">{{ curation.comment }}</p>
+      <div v-if="!isEditing">
+        <p class="comment">{{ curation.comment }}</p>
+      </div>
+      <div v-else>
+        <textarea v-model="editForm.comment" class="comment" rows="4"></textarea>
+      </div>
 
       <div class="meta">
         <span>{{ curation.nickname }}</span>
@@ -65,12 +140,23 @@ function submitComment() {
       </div>
 
       <!-- 익명 커뮤니티: 비밀번호로만 권한 확인 -->
-      <div class="owner">
-        <input class="owner__pw" type="password" placeholder="작성 시 입력한 비밀번호" disabled />
-        <button class="owner__btn" disabled>수정</button>
-        <button class="owner__btn owner__btn--danger" disabled>삭제</button>
+      <div v-if="curation.password" class="owner">
+        <input class="owner__pw" type="password" placeholder="작성 시 입력한 비밀번호" v-model="password" />
+        <template v-if="!isEditing">
+          <button class="owner__btn" @click="onEdit">수정</button>
+        </template>
+        <template v-else>
+          <button class="owner__btn" @click="saveEdit">저장</button>
+          <button class="owner__btn" @click="cancelEdit">취소</button>
+        </template>
+        <button class="owner__btn owner__btn--danger" @click="onDelete">삭제</button>
       </div>
-      <p class="hint">플레이스홀더 — 비밀번호 확인과 수정·삭제는 아직 동작하지 않습니다.</p>
+      <div v-else class="owner">
+        <input class="owner__pw" type="password" placeholder="비밀번호 없이 등록된 글은 수정·삭제할 수 없습니다" disabled />
+      </div>
+
+      <p class="hint" v-if="pwError">{{ pwError }}</p>
+      <p class="hint" v-else-if="!curation.password">비밀번호 없이 등록되어 수정·삭제할 수 없습니다.</p>
     </article>
 
     <section class="card">
