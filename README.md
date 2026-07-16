@@ -1,10 +1,31 @@
-# 지금, 여기의 소리
+# LocalHub, 지금, 여기의 소리
 
-> 내 주변 장소가 만드는 무드로 플레이리스트를 고르는 **위치 기반 앰비언트 플레이어**
+> 서울 지역 위치 기반 무드 플레이어 + 익명 커뮤니티 + 지역 정보 챗봇 — 지금 있는 장소의 분위기에 맞는 음악을 듣고, 그 장소에 어울리는 곡을 남기고 싶은 사람을 위한 서비스입니다.
 
-한국관광공사 TourAPI 4.0 서울 데이터(8,150건)를 브라우저에서 직접 불러와, 현재 위치 주변 장소의 성격으로부터 무드를 정하고 그 무드에 맞는 음악을 크로스페이드로 이어 재생합니다. 백엔드 서버 없이 Vue 3 + Vite만으로 동작하는 정적 SPA입니다.
+내 주변 장소가 만드는 무드로 플레이리스트를 고르는 **위치 기반 앰비언트 플레이어**. 한국관광공사 TourAPI 4.0 서울 데이터(8,150건)를 브라우저에서 직접 불러와, 현재 위치 주변 장소의 성격으로부터 무드를 정하고 그 무드에 맞는 음악을 크로스페이드로 이어 재생합니다. 백엔드 서버 없이 Vue 3 + Vite만으로 동작하는 정적 SPA입니다.
 
-## Quick Start
+## 데모
+
+**배포 URL**: 배포 예정 (Netlify 연동 준비 완료, 실제 배포 후 이 자리에 URL을 채웁니다)
+
+| 홈 — 무드·위치 | 큐레이션 — 지도/목록 |
+|---|---|
+| ![홈 화면](./docs/screenshots/home.png) | ![큐레이션 화면](./docs/screenshots/community.png) |
+
+## 기술 스택
+
+| 구분 | 내용 |
+|------|------|
+| 프레임워크 | Vue 3 (`<script setup>` SFC) + vue-router 5 |
+| 빌드 | Vite 8 (`@vitejs/plugin-vue`) |
+| 지도 | Kakao Maps JavaScript SDK (`src/lib/kakao.js`, `src/components/CurationMap.vue`) |
+| 챗봇 | OpenAI API 브라우저 직접 호출 (`src/lib/chat.js`, `src/components/ChatbotLauncher.vue`) |
+| 데이터 | `public/data/*.json` — TourAPI 서울 원본을 런타임 fetch (번들 미포함, 원본 무수정) |
+| 오디오 | Web Audio 기반 크로스페이드 (cloudflare 소스) |
+| 배포 | Netlify (SPA 리다이렉트 포함) |
+| 백엔드 | 없음 — 커뮤니티는 localStorage, 챗봇은 프론트에서 OpenAI API 직접 호출 |
+
+## 실행 방법
 
 ```bash
 npm install
@@ -20,27 +41,39 @@ npm run preview    # 빌드 결과 로컬 확인
 
 ### 환경변수 (.env)
 
-챗봇(OpenAI) 연동 시 API 키는 반드시 환경변수로 관리합니다.
+키가 필요한 기능(지도, 챗봇)을 쓰려면 `.env`를 만들어야 합니다. `.env.example`을 복사해서 값만 채우세요.
 
 ```bash
-# .env — 절대 커밋하지 않습니다 (.gitignore에 포함되어 있는지 확인)
-VITE_OPENAI_API_KEY=sk-...
+cp .env.example .env
 ```
 
-- `VITE_` 접두사 값은 빌드 결과물에 노출되므로 **사용량 제한 키만 사용**하고 결제 한도를 낮게 설정합니다.
+| 변수 | 용도 | 비고 |
+|------|------|------|
+| `VITE_KAKAO_KEY` | 카카오맵 JavaScript 키 | 카카오 개발자 콘솔 → 플랫폼 → Web에 `http://localhost:5173` 등록 필요 |
+| `VITE_OPENAI_API_KEY` | 챗봇 OpenAI API 키 | `VITE_` 접두사 값은 빌드 결과물에 노출됨 — **사용량 제한 키만 사용**, 결제 한도를 낮게 설정 |
+
+- 실제 키 값은 절대 커밋하지 않습니다 (`.env`는 `.gitignore` 대상).
 - Netlify 배포 시에는 대시보드 → Site settings → Environment variables에 별도 등록합니다.
 - 소스코드 제출 시 `.env` 파일 미포함을 반드시 확인합니다.
 
-## 기술 스택
+## 구현한 기능 (MVP 기준)
 
-| 구분 | 내용 |
-|------|------|
-| 프레임워크 | Vue 3 (`<script setup>` SFC) + vue-router 5 |
-| 빌드 | Vite 8 (`@vitejs/plugin-vue`) |
-| 데이터 | `public/data/*.json` — TourAPI 서울 원본을 런타임 fetch (번들 미포함, 원본 무수정) |
-| 오디오 | Web Audio 기반 크로스페이드 (생성 앰비언트 / 유튜브 이중 소스) |
-| 배포 | Netlify (SPA 리다이렉트 포함) |
-| 백엔드 | 없음 — 커뮤니티는 localStorage, 챗봇은 프론트에서 OpenAI API 직접 호출 |
+[`docs/요구사항.md`](./docs/요구사항.md) 기준 Must(필수) 항목 대비 현재 구현 상태입니다.
+
+- [x] 제공 데이터 연동 — TourAPI 서울 8,150건을 프론트에서 직접 fetch (백엔드 서버 없음)
+- [x] 활용 데이터 목록화 — `public/data/SCHEMA.md`, `public/data/SOURCE.md`
+- [x] 익명 커뮤니티 — 회원가입·로그인 없음
+- [x] 게시글 CRUD — 목록 / 상세 / 작성 / 수정 / 삭제 (`src/views/Curation*.vue`, `src/lib/communityStore.js`)
+- [x] 비밀번호 권한 확인 — 작성 시 비밀번호 저장, 수정·삭제 시 평문 대조(`verifyPassword`) — 교육 목적으로 암호화 없이 설계
+- [x] 챗봇 - OpenAI 연동 — 프론트에서 직접 호출
+- [x] 챗봇 - 질의 응답 — 장소·무드 기반 자연어 질의응답
+- [x] 챗봇 - UI 컴포넌트 — 데스크톱 플로팅 패널 / 모바일 전체화면
+- [x] Vue 3 SPA — 라우터 4개 화면 구성
+- [ ] 배포 (Netlify) — 빌드/리다이렉트 설정(`netlify.toml`) 완료, **실제 배포는 진행 예정**
+
+선택(Should, 최소 1개) 항목:
+
+- [x] 지도 시각화 — Kakao Maps 기반 큐레이션 지도 (`CurationMap.vue`)
 
 ## 화면 구성
 
@@ -53,7 +86,7 @@ VITE_OPENAI_API_KEY=sk-...
 
 플레이어와 하단 내비게이션은 앱 셸에 고정되어 있어 **페이지를 이동해도 재생이 끊기지 않습니다.** 무드 색상은 CSS 변수로 주입되어 화면 전체 톤이 함께 바뀝니다.
 
-## 핵심 기능
+## 핵심 기능 상세
 
 1. **위치 획득** — GPS 좌표 획득, 권한 거부·타임아웃·HTTP 접속 시 서울시청 폴백 + 사유 표시
 2. **근접 장소 탐색** — 하버사인 거리로 가까운 순 상위 5곳, 반경 3km에서 시작해 8→20→50km 단계 확장
@@ -98,7 +131,7 @@ VITE_OPENAI_API_KEY=sk-...
 
 ## 배포 (Netlify)
 
-`netlify.toml`에 빌드 명령(Node 22)과 SPA 리다이렉트(`/* → /index.html`)가 설정되어 있습니다. repo 연동 후 push하면 자동 배포됩니다.
+`netlify.toml`에 빌드 명령(Node 22)과 SPA 리다이렉트(`/* → /index.html`)가 설정되어 있습니다. 현재 상태는 **배포 준비 완료, 실제 배포 예정**이며, repo 연동 후 push하면 자동 배포됩니다. 환경변수(`VITE_KAKAO_KEY`, `VITE_OPENAI_API_KEY`)는 Netlify 대시보드에 별도 등록해야 합니다.
 
 ## 프로젝트 구조
 
@@ -114,7 +147,32 @@ project_vive/
    ├─ router/index.js          # 4개 라우트
    ├─ config/                  # settings · moods · dataset · contentTypes
    ├─ composables/             # useGeolocation · useNearbyPlaces · useMoodPlaceholder · useCrossfadePlayer
-   ├─ lib/                     # geo(하버사인) · pois(로더) · engines(오디오 엔진)
+   ├─ lib/                     # geo(하버사인) · pois(로더) · engines(오디오 엔진) · kakao · chat · communityStore
    ├─ components/              # PlayerBar · NowPlayingSheet · MoodCard · CurationMap · ChatbotLauncher 등
    └─ views/                   # Home · Community · CurationNew · CurationDetail
 ```
+
+## 팀 구성 / 역할
+
+담당 항목은 커밋 이력 기준으로 확인 가능한 범위만 정리했습니다.
+
+| 이름 | git 계정 | 담당 |
+|------|----------|------|
+| 임상준 | `imsangjun` | 프론트엔드 UI/디자인 — 폰트, 카드 디자인, 색감, 호버·터치 인터랙션, 초기 프론트엔드 스캐폴딩 |
+| 이재원 | `jaewon` | 카카오맵 초기 프로토타입 구현 (지도 연동 담당), 배포 준비  |
+| 우지현 | `jihyun-el` / `manu` / `5t5tws5c79-ship-it` (여러 기기·계정 사용) | 챗봇(OpenAI) 연동, 무드 플레이어(오디오 크로스페이드) 통합, 카카오맵 앱 통합, 커뮤니티 게시판 CRUD 및 비밀번호 기반 수정·삭제|
+
+## 협업 방식 / 그라운드 룰
+
+- **소통 채널**: Mattermost
+- **브랜치 전략**: `feat/`, `fix/`, `integration/` 등 목적별 prefix 브랜치에서 작업 → `master`는 PR 승인 후 merge로만 반영(보호 브랜치, 직접 push 없음)
+- **커밋 컨벤션**: `feat:`, `fix:`, `chore:`, `docs:`, `ui:` 등 타입 프리픽스 + 한글 설명
+
+## 트러블슈팅
+
+- **무드 추천이 특정 무드로 쏠림**: LLM 기반 무드 추론이 반복 호출 시 특정 무드로 편향되는 문제가 있어, 프롬프트를 정비·압축해 무드가 고르게 나오도록 수정했습니다.
+- **오디오 크로스페이드 동작 불일치**: `mood_player/` 프로토타입에서 검증된 페이드인/아웃·다음 곡 재생 로직을, Vue 앱에 통합하는 과정에서 동일하게 재현되지 않는 문제가 있어 프로토타입 동작을 기준으로 재정렬했습니다.
+
+## 회고
+
+메인 기능(플레이어, 챗봇 등) 구현에 집중하다 보니 기획 논의가 뒤로 밀렸고, 마무리 시점에 돌아보니 처음 개발 의뢰서 요구사항과 다소 어긋난 부분이 생겼습니다. 다음에는 기능 구현 중간중간 기획 대비 스코프를 더 자주 점검할 필요가 있습니다.

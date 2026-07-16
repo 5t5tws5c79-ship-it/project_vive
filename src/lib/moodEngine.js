@@ -43,7 +43,7 @@ export function ruleMood(list, previousMoodId) {
 export function promptText(list, hour) {
   return '주변 장소:\n' + list.map((p, i) =>
     `${i + 1}. ${p.title} (${TYPE_LABEL[p.typeId] || p.type}) - ${Math.round(p.dist)}m`).join('\n')
-    + `\n시간대: ${hour}시 (한국시간)`
+
 }
 
 export async function llmMood(list, hour, key, previousMoodId) {
@@ -56,7 +56,7 @@ export async function llmMood(list, hour, key, previousMoodId) {
     : ''
   const sys = '너는 위치 기반 음악 무드 큐레이터다. 아래는 사용자 현재 위치 주변 장소 목록(가까운 순, 거리 포함)이다. 이 동네에 흐르는 전체 분위기를 판단해 6개 무드 중 가장 어울리는 하나를 골라라. '
     + '무드: calm(고요:잔잔·정적, 사찰·공원·산·전망대·둘레길), muse(사색:미술관·박물관·고궁·유적·역사), flutter(설렘:축제·공연·팝업·핫플), vivid(활기:번화가·전통시장·대형쇼핑몰·액티비티 레포츠), savory(미식:맛집·카페·전통음식), dreamy(몽환:밤·야경·강변·해안). '
-    + '레포츠나 쇼핑 유형 장소가 하나라도 있다고 곧바로 vivid를 고르지 마라 — 장소 목록 전체를 보고 실제로 북적이는 번화가/시장 분위기가 우세할 때만 vivid를 골라라. 등산로·전망대·공원처럼 조용한 장소가 섞여 있으면 calm처럼 더 어울리는 무드를 우선 고려해라. 특정 무드로 기계적으로 쏠리지 말고 매번 이 장소 조합 고유의 분위기를 신중하게 판단해라. '
+    + '— 장소 목록 전체를 보고 특정 무드로 기계적으로 쏠리지 말고 매번 이 장소 조합 고유의 분위기를 신중하게 판단해라. '
     + prevNote
     + '가까운 장소일수록 크게 반영. reason은 한국어 한 문장.'
   const body = {

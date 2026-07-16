@@ -88,3 +88,36 @@ export function addComment(id, text) {
   persist()
   return entry
 }
+
+// 비밀번호 확인: 글에 비밀번호가 있으면 입력값과 일치해야 true 반환
+export function verifyPassword(id, password) {
+  const c = curationById(id)
+  if (!c) return false
+  if (c.password === null) return false // 비밀번호 없는 글은 항상 false
+  return String(c.password) === String(password)
+}
+
+// 수정: verifyPassword 통과 시 허용된 필드만 패치하고 persist
+export function updateCuration(id, password, patch = {}) {
+  const c = curationById(id)
+  if (!c) return false
+  if (!verifyPassword(id, password)) return false
+  const allowed = ['track', 'artist', 'comment', 'place', 'placeType', 'moodId']
+  Object.keys(patch).forEach((k) => {
+    if (allowed.includes(k)) c[k] = patch[k]
+  })
+  persist()
+  return true
+}
+
+// 삭제: verifyPassword 통과 시 배열에서 제거하고 persist
+export function deleteCuration(id, password) {
+  const c = curationById(id)
+  if (!c) return false
+  if (!verifyPassword(id, password)) return false
+  const idx = curations.value.findIndex((x) => x.id === id)
+  if (idx === -1) return false
+  curations.value.splice(idx, 1)
+  persist()
+  return true
+}

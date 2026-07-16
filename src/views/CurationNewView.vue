@@ -19,6 +19,11 @@ const form = ref({
 
 function submit() {
   if (!form.value.place.trim() || !form.value.track.trim()) return
+  // 비밀번호가 입력되어 있다면 최소 4자리 요구
+  if (form.value.password && form.value.password.length > 0 && form.value.password.length < 4) {
+    showToast('비밀번호는 4자 이상이어야 합니다')
+    return
+  }
   const entry = addCuration({ ...form.value, nickname: '익명의 산책자' })
   showToast('등록되었습니다')
   router.push(`/community/${entry.id}`)

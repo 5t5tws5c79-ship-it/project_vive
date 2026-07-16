@@ -13,9 +13,12 @@ const nearest = computed(() => app.places.value[0] ?? null)
 const mood = computed(() => app.mood.value)
 
 const reason = ref('')
+const password = ref('')
 
-// 재생 중인 곡이 없으면 등록 자체가 성립하지 않는다
-const canSubmit = computed(() => Boolean(track.value) && reason.value.trim().length > 0)
+// 재생 중인 곡이 없으면 등록 자체가 성립하지 않는다. 비밀번호는 수정·삭제 권한 확인용으로 필수 입력.
+const canSubmit = computed(
+  () => Boolean(track.value) && reason.value.trim().length > 0 && password.value.length >= 4
+)
 
 function submit() {
   if (!canSubmit.value) return
@@ -27,6 +30,7 @@ function submit() {
     moodId: mood.value.id,
     nickname: '지금 산책 중',
     coords: nearest.value?.coords ?? null,
+    password: password.value,
   })
   showToast('등록되었습니다')
   emit('close')
@@ -87,6 +91,16 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
               rows="4"
               placeholder="이 장소에서 왜 이 곡이 어울리는지 적어주세요"
               autofocus
+            />
+          </label>
+
+          <label class="field">
+            <span class="field__label">수정용 비밀번호</span>
+            <input
+              v-model="password"
+              class="input"
+              type="password"
+              placeholder="4자리 이상 — 수정·삭제할 때 필요합니다"
             />
           </label>
 

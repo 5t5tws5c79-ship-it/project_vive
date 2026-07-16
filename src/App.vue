@@ -96,7 +96,7 @@ onMounted(locate)
     <header class="header">
       <h1 class="brand">
         <span class="brand__dot" aria-hidden="true" />
-        지금, 여기의 소리
+        LocalHub, 지금, 여기의 소리
       </h1>
       <p v-if="poiCount" class="tagline">
         {{ REGION }} {{ poiCount.toLocaleString() }}곳의 장소를 듣고 있습니다
