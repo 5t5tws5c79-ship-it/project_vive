@@ -1,11 +1,19 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { chatComplete, getApiKey } from '../lib/chat'
+import { loadPois } from '../lib/pois'
+import { curations } from '../lib/communityStore'
 
 // 데스크톱: 우하단 플로팅 패널 / 모바일: 전체화면 전환 (요구사항의 챗봇 UI 규격)
 // 브라우저에서 OpenAI를 직접 호출한다(백엔드 없음). feat/audio_player의 엔진 패턴 참조.
 const isOpen = ref(false)
 const logEl = ref(null)
+
+// 제공 JSON(POI)을 챗봇 컨텍스트로 쓰기 위해 미리 로드해둔다 — 실패해도 챗봇 자체는 동작해야 하므로 조용히 무시
+const pois = ref([])
+loadPois()
+  .then((list) => { pois.value = list })
+  .catch(() => {})
 
 // 화면용 대화 히스토리 — role: 'bot'|'user' (CSS .msg--bot/.msg--user 와 매칭)
 const messages = ref([
@@ -41,7 +49,7 @@ async function send() {
 
   try {
     // 방금 넣은 사용자 메시지까지 포함한 히스토리를 그대로 전달
-    const reply = await chatComplete(messages.value)
+    const reply = await chatComplete(messages.value, { pois: pois.value, curations: curations.value })
     messages.value.push({ role: 'bot', text: reply })
   } catch (err) {
     messages.value.push({
