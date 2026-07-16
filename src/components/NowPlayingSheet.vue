@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import MoodGradient from './MoodGradient.vue'
 
 const props = defineProps({
   player: { type: Object, required: true },
@@ -12,6 +13,9 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const p = props.player
+
+// 무드별 배경 그라디언트 — moods.js 의 gradientId 매핑을 따르고, 없으면 serene 으로.
+const gradientId = computed(() => props.mood.gradientId ?? 'serene')
 
 const trackTitle = computed(() => p.currentTrack.value?.title ?? '재생 대기 중')
 
@@ -39,10 +43,15 @@ const nearbySummary = computed(() => {
     <div class="scrim" @click="emit('close')" />
 
     <section class="sheet" role="dialog" aria-label="재생 중">
-    <button class="grip" aria-label="닫기" @click="emit('close')" />
+    <!-- 히어로: 진행 바·컨트롤보다 위 섹션 전체를 무드 그라디언트로 채운다 -->
+    <div class="hero">
+      <MoodGradient :mood-id="gradientId" />
+      <div class="hero__scrim" aria-hidden="true" />
 
-    <!-- 재생 중인 곡 -->
-    <div class="now">
+      <button class="grip" aria-label="닫기" @click="emit('close')" />
+
+      <!-- 재생 중인 곡 -->
+      <div class="now">
       <div class="art" aria-hidden="true">
         <span class="art__note">♪</span>
         <span v-if="p.isPlaying.value" class="art__ring" />
@@ -65,6 +74,7 @@ const nearbySummary = computed(() => {
       <p v-if="analyzing || moodInfo?.reason" class="now__reason">
         {{ analyzing ? '무드 분석 중…(LLM)' : moodInfo.reason }}
       </p>
+      </div>
     </div>
 
     <!-- 다음 전환까지 -->
@@ -140,9 +150,8 @@ const nearbySummary = computed(() => {
   border-radius: 20px 20px 0 0;
   border: 1px solid var(--panel-border);
   border-bottom: none;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--mood) 18%, transparent), transparent 45%),
-    var(--panel-bg);
+  /* 상단 무드 틴트는 .hero 의 MoodGradient 가 대신한다 */
+  background: var(--panel-bg);
   color: var(--panel-text);
   --text: var(--panel-text);
   --text-dim: var(--panel-text-dim);
@@ -178,13 +187,46 @@ const nearbySummary = computed(() => {
   transform: translateY(100%);
 }
 
+/* ---------- 히어로: 무드 그라디언트 배경 ----------
+   시트 패딩(상 8px · 좌우 20px)을 음수 마진으로 상쇄해 시트 가장자리 끝까지 채우고,
+   시트의 둥근 상단 모서리를 그대로 따른다. MoodGradient 는 absolute inset:0 이므로
+   position:relative + overflow:hidden 만 잡아주면 된다. */
+.hero {
+  position: relative;
+  margin: -8px -20px 0;
+  padding: 8px 20px 22px;
+  border-radius: 19px 19px 0 0; /* .sheet 20px - border 1px */
+  overflow: hidden;
+  /* 그라디언트 위 가독성: 이 섹션 안에서는 텍스트 팔레트를 흰색 계열로 전환 */
+  color: #fff;
+  --text: #fff;
+  --text-dim: rgb(255 255 255 / 85%);
+  --text-faint: rgb(255 255 255 / 68%);
+  --mood-accent: #fff;
+  --surface-2: rgb(0 0 0 / 24%);
+  --border: rgb(255 255 255 / 32%);
+}
+
+/* 밝은 그라디언트(serene·gourmet 등)에서도 흰 글자가 읽히도록 아래로 갈수록 짙어지는 스크림 */
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(10 12 16 / 10%), rgb(10 12 16 / 38%));
+}
+
+/* 그라디언트·스크림 위로 콘텐츠를 올린다 */
+.hero .grip,
+.hero .now {
+  position: relative;
+}
+
 .grip {
   display: block;
   width: 40px;
   height: 4px;
   margin: 4px auto 14px;
   border-radius: 999px;
-  background: var(--border);
+  background: rgb(255 255 255 / 65%);
 }
 
 .now {
@@ -201,7 +243,8 @@ const nearbySummary = computed(() => {
   height: 96px;
   margin-bottom: 16px;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--mood) 28%, transparent);
+  background: rgb(255 255 255 / 16%);
+  backdrop-filter: blur(6px);
 }
 
 .art__note {
@@ -213,7 +256,7 @@ const nearbySummary = computed(() => {
   position: absolute;
   inset: 0;
   border-radius: 20px;
-  border: 2px solid var(--mood);
+  border: 2px solid rgb(255 255 255 / 75%);
   animation: breathe 3.5s ease-in-out infinite;
 }
 

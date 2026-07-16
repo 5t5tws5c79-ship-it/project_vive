@@ -32,6 +32,9 @@ export const TYPE_LABEL = {
   39: '음식점',
 }
 
+// gradientId: MoodGradient.vue 의 6종 배경(serene/contemplative/vital/festive/gourmet/citywalk) 매핑.
+// 무드↔그라디언트가 1:1 이 아니어도 되므로(예: dreamy 에 contemplative 를 써도 됨) 여기서 자유롭게 바꾼다.
+
 // 트랙 헬퍼 — curation.json 의 r2Key 를 실제 재생 URL 로.
 function track(mood, n, title, r2Key) {
   return { id: `${mood}-${n}`, title, url: `${R2_BASE}/${r2Key}` }
@@ -40,6 +43,7 @@ function track(mood, n, title, r2Key) {
 export const MOODS = [
   {
     id: 'calm',
+    gradientId: 'serene',
     label: '고요',
     color: '#6aa9c9',
     accent: '#bfe3f2',
@@ -51,6 +55,7 @@ export const MOODS = [
   },
   {
     id: 'muse',
+    gradientId: 'contemplative',
     label: '사색',
     color: '#8f86c9',
     accent: '#d6cffa',
@@ -62,6 +67,7 @@ export const MOODS = [
   },
   {
     id: 'flutter',
+    gradientId: 'festive',
     label: '설렘',
     color: '#e6a15c',
     accent: '#ffd9a8',
@@ -74,6 +80,7 @@ export const MOODS = [
   },
   {
     id: 'vivid',
+    gradientId: 'vital',
     label: '활기',
     color: '#e0655f',
     accent: '#ffd9a8',
@@ -86,6 +93,7 @@ export const MOODS = [
   },
   {
     id: 'savory',
+    gradientId: 'gourmet',
     label: '미식',
     color: '#cf8f6a',
     accent: '#f7d3b8',
@@ -97,6 +105,7 @@ export const MOODS = [
   },
   {
     id: 'dreamy',
+    gradientId: 'citywalk',
     label: '몽환',
     color: '#6f7fc9',
     accent: '#c2ead9',
